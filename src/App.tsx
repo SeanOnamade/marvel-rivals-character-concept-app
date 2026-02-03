@@ -1,5 +1,7 @@
 import React, { useState, useRef } from 'react';
+import { ExternalLink, Loader2 } from 'lucide-react';
 import { getDefaultHeroData, getDefaultDisplaySettings, HeroData, DisplaySettings } from './types';
+import { openInNewTab } from './utils';
 import FormEditor from './components/FormEditor';
 import AbilityPageRenderer from './components/AbilityPageRenderer';
 import ExportButton from './components/ExportButton';
@@ -8,7 +10,25 @@ function App() {
     const [heroData, setHeroData] = useState<HeroData>(getDefaultHeroData());
     const [displaySettings, setDisplaySettings] = useState<DisplaySettings>(getDefaultDisplaySettings());
     const [showPreview, setShowPreview] = useState(true);
+    const [isExporting, setIsExporting] = useState(false);
+    const [isOpeningTab, setIsOpeningTab] = useState(false);
     const rendererRef = useRef<HTMLDivElement>(null);
+
+    const handleOpenInNewTab = async () => {
+        if (!rendererRef.current) return;
+        
+        setIsOpeningTab(true);
+        try {
+            await openInNewTab(
+                rendererRef.current, 
+                `${heroData.name.toLowerCase().replace(/\s+/g, '-')}-ability-page.png`
+            );
+        } catch (err) {
+            console.error('Failed to open in new tab:', err);
+        } finally {
+            setIsOpeningTab(false);
+        }
+    };
 
     const handleImageUpload = (file: File) => {
         const reader = new FileReader();
@@ -56,16 +76,34 @@ function App() {
                         </p>
                         </div>
                     </div>
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-3">
                         <button
                             onClick={() => setShowPreview(!showPreview)}
                             className="bg-marvel-border text-white px-4 py-2 rounded hover:bg-marvel-metal transition-colors"
                         >
                             {showPreview ? 'Hide Preview' : 'Show Preview'}
                         </button>
+                        <button
+                            onClick={handleOpenInNewTab}
+                            disabled={isOpeningTab}
+                            className="bg-marvel-metal border border-marvel-yellow/50 text-marvel-yellow px-4 py-3 rounded-lg font-bold uppercase tracking-wider hover:bg-marvel-yellow/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                        >
+                            {isOpeningTab ? (
+                                <>
+                                    <Loader2 className="animate-spin" size={18} />
+                                    Opening...
+                                </>
+                            ) : (
+                                <>
+                                    <ExternalLink size={18} />
+                                    Preview
+                                </>
+                            )}
+                        </button>
                         <ExportButton
                             targetRef={rendererRef}
                             filename={`${heroData.name.toLowerCase().replace(/\s+/g, '-')}-ability-page.png`}
+                            onExportStateChange={setIsExporting}
                         />
                     </div>
                 </div>
@@ -85,7 +123,26 @@ function App() {
 
                 {/* Preview Panel */}
                 {showPreview && (
-                    <div className="flex-1 overflow-auto p-4 flex items-start justify-center">
+                    <div className="flex-1 overflow-auto p-4 flex items-start justify-center relative">
+                        {/* Export/Preview Loading Overlay */}
+                        {(isExporting || isOpeningTab) && (
+                            <div className="absolute inset-0 z-50 flex items-center justify-center bg-marvel-dark/90 backdrop-blur-sm">
+                                <div className="flex flex-col items-center gap-4 p-8 rounded-xl bg-marvel-metal/80 border border-marvel-yellow/30 shadow-2xl">
+                                    <div className="relative">
+                                        <div className="w-16 h-16 border-4 border-marvel-yellow/20 rounded-full"></div>
+                                        <div className="absolute inset-0 w-16 h-16 border-4 border-transparent border-t-marvel-yellow rounded-full animate-spin"></div>
+                                    </div>
+                                    <div className="text-center">
+                                        <h3 className="text-xl font-bold text-marvel-yellow uppercase tracking-wider">
+                                            {isExporting ? 'Exporting' : 'Generating Preview'}
+                                        </h3>
+                                        <p className="text-gray-400 text-sm mt-1">
+                                            {isExporting ? 'Downloading high-resolution PNG...' : 'Opening in new tab...'}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
                         <div style={{ transform: 'scale(0.75)', transformOrigin: 'top center' }}>
                             <AbilityPageRenderer
                                 ref={rendererRef}

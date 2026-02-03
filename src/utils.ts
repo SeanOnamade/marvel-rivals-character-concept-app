@@ -36,12 +36,95 @@ export const exportToPNG = async (element: HTMLElement, filename: string): Promi
             (el as HTMLElement).style.visibility = '';
         });
 
+        // Download the file
         const link = document.createElement('a');
         link.download = filename;
         link.href = dataUrl;
         link.click();
     } catch (error) {
         console.error('Error exporting to PNG:', error);
+        throw error;
+    }
+};
+
+export const openInNewTab = async (element: HTMLElement, filename: string): Promise<void> => {
+    try {
+        // Find the scale wrapper (parent element with transform)
+        const scaleWrapper = element.parentElement;
+        let originalTransform = '';
+        
+        if (scaleWrapper) {
+            originalTransform = scaleWrapper.style.transform;
+            scaleWrapper.style.transform = 'none';
+        }
+
+        // Hide elements with 'no-export' class before capture
+        const noExportElements = element.querySelectorAll('.no-export');
+        noExportElements.forEach((el) => {
+            (el as HTMLElement).style.visibility = 'hidden';
+        });
+
+        // Wait for layout to update
+        await new Promise(resolve => requestAnimationFrame(() => setTimeout(resolve, 50)));
+
+        // Export at 3x scale for high resolution (1280x720 -> 3840x2160)
+        const dataUrl = await domToPng(element, {
+            scale: 3,
+            backgroundColor: '#0a0a0a',
+        });
+
+        // Restore transform
+        if (scaleWrapper) {
+            scaleWrapper.style.transform = originalTransform;
+        }
+
+        // Restore visibility
+        noExportElements.forEach((el) => {
+            (el as HTMLElement).style.visibility = '';
+        });
+
+        // Open in new tab
+        const newTab = window.open();
+        if (newTab) {
+            newTab.document.write(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>${filename}</title>
+                    <style>
+                        * {
+                            margin: 0;
+                            padding: 0;
+                            box-sizing: border-box;
+                        }
+                        html, body {
+                            width: 100%;
+                            height: 100%;
+                            overflow: hidden;
+                        }
+                        body {
+                            background: #0a0a0a;
+                            display: flex;
+                            justify-content: center;
+                            align-items: center;
+                        }
+                        img {
+                            max-width: 100vw;
+                            max-height: 100vh;
+                            object-fit: contain;
+                            box-shadow: 0 4px 30px rgba(0,0,0,0.8);
+                        }
+                    </style>
+                </head>
+                <body>
+                    <img src="${dataUrl}" alt="${filename}" />
+                </body>
+                </html>
+            `);
+            newTab.document.close();
+        }
+    } catch (error) {
+        console.error('Error opening in new tab:', error);
         throw error;
     }
 };

@@ -1,132 +1,220 @@
-# Marvel Rivals Ability Builder
+<div align="center">
 
-A fully interactive web-based character creation tool that reproduces the in-game **Marvel Rivals ability screen layout**, allowing users to create custom heroes with live preview and PNG export.
+# 🦸 Marvel Rivals Ability Builder
 
-![Marvel Rivals Ability Builder](https://img.shields.io/badge/React-18-blue) ![TypeScript](https://img.shields.io/badge/TypeScript-5-blue) ![Tailwind CSS](https://img.shields.io/badge/Tailwind-3-38bdf8)
+**Create stunning custom hero ability pages that look straight out of the game**
+
+[![React](https://img.shields.io/badge/React-19-61dafb?style=for-the-badge&logo=react&logoColor=white)](https://react.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5-3178c6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Vite](https://img.shields.io/badge/Vite-7-646cff?style=for-the-badge&logo=vite&logoColor=white)](https://vitejs.dev/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind-4-38bdf8?style=for-the-badge&logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
+
+[Live Demo](#) · [Report Bug](../../issues) · [Request Feature](../../issues)
+
+</div>
+
+---
+
+## 📸 Examples
+
+<div align="center">
+
+| Doctor Strange | The Spot (Custom Hero) |
+|:--------------:|:----------------------:|
+| ![Doctor Strange Example](public/downloads/doctor-strange-ability-page%20(33).png) | ![The Spot Example](public/downloads/the-spot-ability-page%20(5).png) |
+
+*These ability pages were created entirely within the app and exported as PNG*
+
+</div>
+
+---
 
 ## ✨ Features
 
-- **Live Preview**: See your changes instantly in a pixel-accurate Marvel Rivals ability page
-- **Full Customization**: Edit hero name, role, difficulty, attacks, abilities, passive, and ultimate
-- **Image Upload**: Upload and position custom hero portraits with drag-and-drop support
-- **PNG Export**: Export your custom ability page as a high-quality PNG image
-- **Authentic Design**: Matches the in-game Marvel Rivals UI with:
-  - Dark brushed-metal backgrounds
-  - Yellow accent lines and borders
-  - Diamond-shaped ability icons
-  - Glowing effects on ultimate abilities
-  - Role-based color coding
+### 🎨 Pixel-Perfect Design
+Recreates the authentic Marvel Rivals in-game ability screen with diamond-shaped icons, glowing ultimates, yellow accent lines, and the signature dark brushed-metal aesthetic.
+
+### ⚡ Live Preview
+See your changes instantly as you edit. What you see is exactly what you'll export.
+
+### 🎮 PC & Console Support
+Switch between keyboard/mouse hotkeys (SHIFT, E, F, Q) and controller buttons (L1, R1, Triangle, L3+R3) with one click.
+
+### 🖼️ Full Image Control
+Upload hero portraits with precise positioning, scaling, cropping, and edge fade controls. Add hero logos that appear behind your character.
+
+### 🎯 Complete Customization
+- Hero name, role, and difficulty rating
+- Unlimited attacks, abilities, and passives
+- Team-up abilities with partner hero icons
+- Ultimate ability with glow effects
+- Custom ability icons with scaling
+- Colored text highlights (green/blue/orange)
+- Additional pages (like Gambit's card forms)
+- Banner color and fold styling
+
+### 📤 High-Quality Export
+Export your creation as a crisp 1280×720 PNG image, ready to share on Discord, Reddit, Twitter, or anywhere else.
+
+---
 
 ## 🚀 Quick Start
 
 ### Prerequisites
 
-- Node.js 18+ and npm
+- [Node.js](https://nodejs.org/) 18 or higher
 
 ### Installation
 
 ```bash
+# Clone the repository
+git clone https://github.com/YOUR_USERNAME/marvel-rivals-template.git
+cd marvel-rivals-template
+
 # Install dependencies
 npm install
 
 # Start development server
 npm run dev
-
-# Build for production
-npm run build
 ```
 
-The app will be available at `http://localhost:5173/`
+Open [http://localhost:5173](http://localhost:5173) in your browser.
 
-## 🎮 Usage
+### Build for Production
 
-1. **Edit Hero Information**: Use the form editor on the left to customize your hero
-   - Enter hero name, select role (Strategist/Duelist/Vanguard)
-   - Set difficulty (1-5 stars)
-   - Fill in attack, abilities, passive, and ultimate details
+```bash
+npm run build
+npm run preview
+```
 
-2. **Upload Hero Portrait**: Click on the circular portrait area to upload an image
-   - Supports drag-and-drop
-   - Automatically applies circular mask
-   - Role badge appears in bottom-right corner
+---
 
-3. **Preview**: The right panel shows a live preview matching the Marvel Rivals layout
-   - Left panel: Hero portrait, name, difficulty
-   - Center column: Attacks and team-up abilities
-   - Right column: Abilities (Shift, E, F, R) and Ultimate (Q+E)
+## 🎮 How to Use
 
-4. **Export**: Click "Export as PNG" to download your custom ability page
+1. **Choose a Starting Point**
+   - Start with a blank template, or
+   - Load a preset (Doctor Strange, The Spot)
 
-## 🛠 Tech Stack
+2. **Customize Your Hero**
+   - Set the hero name, role (Strategist/Duelist/Vanguard), and difficulty
+   - Upload a hero portrait and adjust positioning
+   - Choose your banner color
 
-- **React 18** - UI framework
-- **TypeScript** - Type safety
-- **Vite** - Build tool and dev server
-- **Tailwind CSS** - Styling
-- **html-to-image** - PNG export functionality
-- **Lucide React** - Icons
+3. **Add Abilities**
+   - Fill in attacks, abilities, passives, and ultimate
+   - Upload custom icons or leave them as placeholders
+   - Use color tags like `[green]text[/green]` for highlights
+
+4. **Configure Team-Ups**
+   - Add team-up abilities with partner hero icons
+   - Set whether your hero is the anchor or secondary
+
+5. **Export**
+   - Click "Export as PNG" to download your creation
+   - Share it with the community!
+
+---
+
+## 🛠️ Tech Stack
+
+| Technology | Purpose |
+|------------|---------|
+| **React 19** | UI framework |
+| **TypeScript** | Type safety |
+| **Vite** | Lightning-fast dev server & build |
+| **Tailwind CSS 4** | Utility-first styling |
+| **html-to-image** | PNG export |
+| **Lucide React** | Beautiful icons |
+
+---
 
 ## 📁 Project Structure
 
 ```
-src/
-├── components/
-│   ├── AbilityCard.tsx          # Reusable ability card component
-│   ├── AbilityPageRenderer.tsx  # Main preview renderer
-│   ├── DifficultyStars.tsx      # Star rating display
-│   ├── ExportButton.tsx         # PNG export button
-│   ├── FormEditor.tsx           # Left-side form editor
-│   └── HeroPortrait.tsx         # Hero portrait with upload
-├── types.ts                     # TypeScript interfaces
-├── utils.ts                     # Utility functions
-├── App.tsx                      # Main app component
-├── main.tsx                     # Entry point
-└── index.css                    # Global styles
+marvel-rivals-template/
+├── public/
+│   ├── backgrounds/      # Gallery background images
+│   ├── hero-icons/       # All hero avatar icons
+│   ├── icons/            # Ability icons by hero
+│   ├── logos/            # Hero logo images
+│   ├── role-icons/       # Strategist/Duelist/Vanguard badges
+│   └── ui/               # UI elements (buttons, banners, etc.)
+├── src/
+│   ├── components/
+│   │   ├── AbilityPageRenderer.tsx  # Main preview canvas
+│   │   ├── FormEditor.tsx           # Left-side editor panel
+│   │   ├── HeroPortrait.tsx         # Hero image with controls
+│   │   ├── ImageCropEditor.tsx      # Crop modal
+│   │   ├── DifficultyStars.tsx      # Star rating display
+│   │   └── ExportButton.tsx         # PNG download button
+│   ├── types.ts          # TypeScript interfaces & presets
+│   ├── utils.ts          # Helper functions
+│   ├── App.tsx           # Main application
+│   └── index.css         # Global styles & fonts
+└── package.json
 ```
-
-## 🎨 Customization
-
-### Colors
-
-The Marvel Rivals color scheme is defined in `tailwind.config.js`:
-
-- `marvel-dark`: #1a1a1a (main background)
-- `marvel-metal`: #2a2a2a (card backgrounds)
-- `marvel-yellow`: #f4c430 (primary accent)
-- `marvel-accent`: #ffd700 (secondary accent)
-
-### Role Colors
-
-Role badge colors are defined in `src/utils.ts`:
-
-- Strategist: Green (#4CAF50)
-- Duelist: Red (#F44336)
-- Vanguard: Blue (#2196F3)
-
-## 📸 Screenshots
-
-The application creates ability pages that match the in-game Marvel Rivals layout, including:
-
-- Authentic typography and spacing
-- Diamond-shaped ability icons
-- Yellow accent lines
-- Glowing borders on ultimate abilities
-- Role-based color coding
-
-## 🤝 Contributing
-
-This is a template project. Feel free to fork and customize for your own use!
-
-## 📄 License
-
-MIT License - feel free to use this project for any purpose.
-
-## 🙏 Credits
-
-- Inspired by Marvel Rivals by NetEase Games
-- Built with modern web technologies
-- Created with Antigravity AI
 
 ---
 
-**Note**: This is a fan-made tool and is not affiliated with or endorsed by Marvel or NetEase Games.
+## 🎨 Customization
+
+### Adding New Hero Presets
+
+Edit `src/types.ts` and add to the `HERO_PRESETS` array:
+
+```typescript
+export const HERO_PRESETS: HeroPresetConfig[] = [
+  // ... existing presets
+  {
+    name: 'Your Hero',
+    getData: () => ({
+      name: 'HERO NAME',
+      role: 'Duelist',
+      difficulty: 3,
+      // ... full hero data
+    }),
+  },
+];
+```
+
+### Color Scheme
+
+The Marvel Rivals palette is defined in `tailwind.config.js`:
+
+- `marvel-dark`: #1a1a1a (main background)
+- `marvel-metal`: #2a2a2a (card/panel backgrounds)
+- `marvel-yellow`: #f4c430 (primary accent)
+- `marvel-accent`: #ffd700 (secondary accent)
+
+---
+
+## 🤝 Contributing
+
+Contributions are welcome! Feel free to:
+
+- 🐛 Report bugs
+- 💡 Suggest features
+- 🎨 Add new hero presets
+- 🔧 Submit pull requests
+
+---
+
+## 📄 License
+
+MIT License - use this project however you like!
+
+---
+
+## ⚠️ Disclaimer
+
+This is a **fan-made tool** and is not affiliated with, endorsed by, or connected to Marvel, NetEase Games, or any official Marvel Rivals properties. All Marvel characters and related elements are trademarks of Marvel Entertainment, LLC.
+
+---
+
+<div align="center">
+
+**Made with ❤️ for the Marvel Rivals community**
+
+*If you find this useful, consider giving it a ⭐!*
+
+</div>
