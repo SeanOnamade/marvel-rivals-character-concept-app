@@ -1,0 +1,134 @@
+/* Imports must come first */
+@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&display=swap');
+@import "tailwindcss";
+
+/* Marvel Rivals Font - Matthan Sans */
+@font-face {
+  font-family: 'Matthan Sans';
+  src: url('/fonts/Matthan Sans Regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+/* Adirek Sans - available if needed */
+/* Credit: Icons made from https://www.onlinewebfonts.com/icon is licensed by CC BY 4.0 */
+@font-face {
+  font-family: 'Adirek Sans';
+  src: url('/fonts/AdirekSans.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+@theme {
+  --color-marvel-dark: #1a1a1a;
+  --color-marvel-metal: #2a2a2a;
+  --color-marvel-yellow: #f4c430;
+  --color-marvel-accent: #ffd700;
+  --color-marvel-border: #3a3a3a;
+  
+  --font-marvel: 'Matthan Sans', 'Rajdhani', sans-serif;
+  
+  --shadow-glow: 0 0 10px rgba(244, 196, 48, 0.5);
+  --shadow-glow-strong: 0 0 20px rgba(244, 196, 48, 0.8);
+}
+
+@layer base {
+  body {
+    background-color: #1a1a1a;
+    color: white;
+    font-family: 'Matthan Sans', 'Rajdhani', sans-serif;
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  /* Cursor pointer for all interactive elements */
+  button,
+  [type="button"],
+  [type="submit"],
+  [type="reset"],
+  [type="checkbox"],
+  [type="radio"],
+  [type="color"],
+  [type="range"],
+  [type="file"],
+  select,
+  label[for],
+  .cursor-pointer {
+    cursor: pointer;
+  }
+
+  /* Style range inputs (sliders) */
+  input[type="range"] {
+    cursor: pointer;
+  }
+
+  input[type="range"]::-webkit-slider-thumb {
+    cursor: pointer;
+  }
+
+  input[type="range"]::-moz-range-thumb {
+    cursor: pointer;
+  }
+}
+
+@utility text-glow {
+  text-shadow: 0 0 10px rgba(244, 196, 48, 0.5);
+}
+
+@utility border-glow {
+  box-shadow: 0 0 10px rgba(244, 196, 48, 0.3);
+}
+
+@utility bg-metal-gradient {
+  background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 50%, #1a1a1a 100%);
+}
+
+@utility bg-ability-card {
+  background: linear-gradient(135deg, rgba(42, 42, 42, 0.8) 0%, rgba(26, 26, 26, 0.9) 100%);
+  border: 1px solid rgba(244, 196, 48, 0.3);
+}
+
+@utility diamond-shape {
+  transform: rotate(45deg);
+}
+
+@utility diamond-content {
+  transform: rotate(-45deg);
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #1a1a1a;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #3a3a3a;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #4a4a4a;
+}
+
+/* Animations */
+@keyframes glow-pulse {
+  0%, 100% {
+    box-shadow: 0 0 10px rgba(244, 196, 48, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(244, 196, 48, 0.6);
+  }
+}
+
+.animate-glow {
+  animation: glow-pulse 2s ease-in-out infinite;
+}

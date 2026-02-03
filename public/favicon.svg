@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <defs>
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#ffd700"/>
+      <stop offset="50%" style="stop-color:#f4c430"/>
+      <stop offset="100%" style="stop-color:#daa520"/>
+    </linearGradient>
+  </defs>
+  <!-- Diamond shape -->
+  <rect x="6" y="6" width="20" height="20" rx="2" fill="url(#goldGrad)" transform="rotate(45 16 16)"/>
+  <!-- M letter for Marvel -->
+  <text x="16" y="21" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#1a1a1a" text-anchor="middle">M</text>
+</svg>
