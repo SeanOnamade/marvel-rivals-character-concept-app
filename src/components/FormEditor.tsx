@@ -1,6 +1,6 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { HeroData, Role, Attack, Ability, TeamUpAbility, DisplaySettings, ContentPage, CropBounds, createDefaultAttack, createDefaultAbility, createDefaultTeamUp, createDefaultPassive, createDefaultContentPage, getDefaultPortraitSettings, getDefaultHeroInfoSettings, getDefaultCropBounds, getDefaultHeroData, getDefaultFoldSettings, HERO_PRESETS, HERO_ICONS, CONSOLE_BUTTON_OPTIONS, CONSOLE_ATTACK_OPTIONS } from '../types';
-import { Plus, Trash2, Upload, Monitor, Gamepad2, ChevronDown, ChevronUp, ChevronRight, Move, Type, Crop } from 'lucide-react';
+import { Plus, Trash2, Upload, Monitor, Gamepad2, ChevronDown, ChevronUp, ChevronRight, Move, Type, Crop, GripVertical } from 'lucide-react';
 import ImageCropEditor from './ImageCropEditor';
 
 interface FormEditorProps {
@@ -174,9 +174,137 @@ const FormEditor: React.FC<FormEditorProps> = ({ heroData, onChange, displaySett
     const [heroImageExpanded, setHeroImageExpanded] = useState(false);
     const [heroNameExpanded, setHeroNameExpanded] = useState(false);
     const [imageBannerExpanded, setImageBannerExpanded] = useState(false);
+    
+    // Drag and drop state
+    const [draggedItem, setDraggedItem] = useState<{ type: string; index: number } | null>(null);
+    const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+    
+    // Auto-scroll during drag
+    const scrollContainerRef = useRef<HTMLDivElement>(null);
+    const scrollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+    const SCROLL_ZONE_SIZE = 80; // pixels from edge to trigger scroll
+    const SCROLL_SPEED = 8; // pixels per frame
+
+    const handleAutoScroll = useCallback((e: React.DragEvent) => {
+        if (!scrollContainerRef.current || !draggedItem) return;
+        
+        const container = scrollContainerRef.current;
+        const rect = container.getBoundingClientRect();
+        const mouseY = e.clientY;
+        
+        // Clear any existing scroll interval
+        if (scrollIntervalRef.current) {
+            clearInterval(scrollIntervalRef.current);
+            scrollIntervalRef.current = null;
+        }
+        
+        // Check if near top edge
+        if (mouseY < rect.top + SCROLL_ZONE_SIZE) {
+            const intensity = 1 - (mouseY - rect.top) / SCROLL_ZONE_SIZE;
+            scrollIntervalRef.current = setInterval(() => {
+                container.scrollTop -= SCROLL_SPEED * intensity;
+            }, 16);
+        }
+        // Check if near bottom edge
+        else if (mouseY > rect.bottom - SCROLL_ZONE_SIZE) {
+            const intensity = 1 - (rect.bottom - mouseY) / SCROLL_ZONE_SIZE;
+            scrollIntervalRef.current = setInterval(() => {
+                container.scrollTop += SCROLL_SPEED * intensity;
+            }, 16);
+        }
+    }, [draggedItem]);
+
+    // Clean up scroll interval on drag end
+    useEffect(() => {
+        if (!draggedItem && scrollIntervalRef.current) {
+            clearInterval(scrollIntervalRef.current);
+            scrollIntervalRef.current = null;
+        }
+    }, [draggedItem]);
+
+    // Clean up on unmount
+    useEffect(() => {
+        return () => {
+            if (scrollIntervalRef.current) {
+                clearInterval(scrollIntervalRef.current);
+            }
+        };
+    }, []);
 
     const updateField = <K extends keyof HeroData>(field: K, value: HeroData[K]) => {
         onChange({ ...heroData, [field]: value });
+    };
+
+    // Helper to swap array items
+    const swapArrayItems = <T,>(arr: T[], fromIndex: number, toIndex: number): T[] => {
+        const newArr = [...arr];
+        // Swap the two items
+        [newArr[fromIndex], newArr[toIndex]] = [newArr[toIndex], newArr[fromIndex]];
+        return newArr;
+    };
+
+    // Reorder functions for drag and drop (swap behavior)
+    const reorderAttacks = (fromIndex: number, toIndex: number) => {
+        onChange({ ...heroData, attacks: swapArrayItems(heroData.attacks, fromIndex, toIndex) });
+    };
+
+    const reorderAbilities = (fromIndex: number, toIndex: number) => {
+        onChange({ ...heroData, abilities: swapArrayItems(heroData.abilities, fromIndex, toIndex) });
+    };
+
+    const reorderTeamUps = (fromIndex: number, toIndex: number) => {
+        onChange({ ...heroData, teamUpAbilities: swapArrayItems(heroData.teamUpAbilities, fromIndex, toIndex) });
+    };
+
+    const reorderPassives = (fromIndex: number, toIndex: number) => {
+        onChange({ ...heroData, passives: swapArrayItems(heroData.passives, fromIndex, toIndex) });
+    };
+
+    // Drag handlers
+    const handleDragStart = (type: string, index: number) => {
+        setDraggedItem({ type, index });
+    };
+
+    const handleDragOver = (e: React.DragEvent, index: number) => {
+        e.preventDefault();
+        setDragOverIndex(index);
+    };
+
+    const handleDragEnd = () => {
+        setDraggedItem(null);
+        setDragOverIndex(null);
+        // Clear auto-scroll
+        if (scrollIntervalRef.current) {
+            clearInterval(scrollIntervalRef.current);
+            scrollIntervalRef.current = null;
+        }
+    };
+
+    const handleDrop = (type: string, toIndex: number) => {
+        if (!draggedItem || draggedItem.type !== type) return;
+        
+        const fromIndex = draggedItem.index;
+        if (fromIndex === toIndex) {
+            handleDragEnd();
+            return;
+        }
+
+        switch (type) {
+            case 'attack':
+                reorderAttacks(fromIndex, toIndex);
+                break;
+            case 'ability':
+                reorderAbilities(fromIndex, toIndex);
+                break;
+            case 'teamup':
+                reorderTeamUps(fromIndex, toIndex);
+                break;
+            case 'passive':
+                reorderPassives(fromIndex, toIndex);
+                break;
+        }
+        
+        handleDragEnd();
     };
 
     const handleCropApply = (crop: CropBounds) => {
@@ -356,7 +484,11 @@ const FormEditor: React.FC<FormEditorProps> = ({ heroData, onChange, displaySett
     const hotkeyLabel = displaySettings.controlScheme === 'PC' ? 'PC Hotkey' : 'Console Button';
 
     return (
-        <div className="bg-marvel-metal rounded-lg p-6 h-full overflow-y-auto">
+        <div 
+            ref={scrollContainerRef}
+            className="bg-marvel-metal rounded-lg p-6 h-full overflow-y-auto"
+            onDragOver={handleAutoScroll}
+        >
             <h2 className="text-2xl font-bold mb-6 text-marvel-yellow uppercase tracking-wider">
                 Hero Editor
             </h2>
@@ -366,7 +498,17 @@ const FormEditor: React.FC<FormEditorProps> = ({ heroData, onChange, displaySett
                 <h3 className="text-lg font-semibold mb-3 text-marvel-accent">Quick Start</h3>
                 <div className="flex flex-wrap gap-2">
                     <button
-                        onClick={() => onChange(getDefaultHeroData())}
+                        onClick={() => {
+                            onChange(getDefaultHeroData());
+                            // Reset display settings to defaults
+                            onDisplaySettingsChange({
+                                ...displaySettings,
+                                contentOffsetY: 0,
+                                abilitySpacing: 16,
+                                showBackground: false,
+                                customBackground: undefined,
+                            });
+                        }}
                         className="px-3 py-2 bg-gray-700 hover:bg-gray-600 rounded text-sm transition-colors"
                     >
                         New Blank Template
@@ -1142,9 +1284,26 @@ const FormEditor: React.FC<FormEditorProps> = ({ heroData, onChange, displaySett
                 </div>
 
                 {heroData.attacks.map((attack, index) => (
-                    <div key={attack.id} className="mb-4 p-3 bg-marvel-dark rounded">
+                    <div 
+                        key={attack.id} 
+                        className={`mb-4 p-3 bg-marvel-dark rounded transition-all ${
+                            draggedItem?.type === 'attack' && dragOverIndex === index 
+                                ? 'border-2 border-marvel-yellow border-dashed' 
+                                : 'border-2 border-transparent'
+                        }`}
+                        draggable
+                        onDragStart={() => handleDragStart('attack', index)}
+                        onDragOver={(e) => handleDragOver(e, index)}
+                        onDragEnd={handleDragEnd}
+                        onDrop={() => handleDrop('attack', index)}
+                    >
                         <div className="flex items-center justify-between mb-2">
-                            <h4 className="text-sm font-bold text-marvel-yellow">Attack {index + 1}</h4>
+                            <div className="flex items-center gap-2">
+                                <div className="cursor-grab active:cursor-grabbing text-gray-500 hover:text-gray-300">
+                                    <GripVertical className="w-4 h-4" />
+                                </div>
+                                <h4 className="text-sm font-bold text-marvel-yellow">Attack {index + 1}</h4>
+                            </div>
                             <div className="flex items-center gap-2">
                                 <IconUpload icon={attack.icon} onUpload={(url) => updateAttack(attack.id, 'icon', url)} size="sm" />
                                 {attack.icon && (
@@ -1199,9 +1358,26 @@ const FormEditor: React.FC<FormEditorProps> = ({ heroData, onChange, displaySett
                 {heroData.teamUpAbilities.length === 0 && <p className="text-gray-500 text-sm italic">No team-up abilities added.</p>}
 
                 {heroData.teamUpAbilities.map((teamUp, index) => (
-                    <div key={teamUp.id} className="mb-4 p-3 bg-marvel-dark rounded">
+                    <div 
+                        key={teamUp.id} 
+                        className={`mb-4 p-3 bg-marvel-dark rounded transition-all ${
+                            draggedItem?.type === 'teamup' && dragOverIndex === index 
+                                ? 'border-2 border-marvel-yellow border-dashed' 
+                                : 'border-2 border-transparent'
+                        }`}
+                        draggable
+                        onDragStart={() => handleDragStart('teamup', index)}
+                        onDragOver={(e) => handleDragOver(e, index)}
+                        onDragEnd={handleDragEnd}
+                        onDrop={() => handleDrop('teamup', index)}
+                    >
                         <div className="flex items-center justify-between mb-2">
-                            <h4 className="text-sm font-bold text-marvel-yellow">Team-Up {index + 1}</h4>
+                            <div className="flex items-center gap-2">
+                                <div className="cursor-grab active:cursor-grabbing text-gray-500 hover:text-gray-300">
+                                    <GripVertical className="w-4 h-4" />
+                                </div>
+                                <h4 className="text-sm font-bold text-marvel-yellow">Team-Up {index + 1}</h4>
+                            </div>
                             <div className="flex items-center gap-2">
                                 <IconUpload icon={teamUp.icon} onUpload={(url) => updateTeamUp(teamUp.id, 'icon', url)} size="sm" />
                                 {teamUp.icon && (
@@ -1418,9 +1594,26 @@ const FormEditor: React.FC<FormEditorProps> = ({ heroData, onChange, displaySett
                 </div>
 
                 {heroData.abilities.map((ability, index) => (
-                    <div key={ability.id} className="mb-4 p-3 bg-marvel-dark rounded">
+                    <div 
+                        key={ability.id} 
+                        className={`mb-4 p-3 bg-marvel-dark rounded transition-all ${
+                            draggedItem?.type === 'ability' && dragOverIndex === index 
+                                ? 'border-2 border-marvel-yellow border-dashed' 
+                                : 'border-2 border-transparent'
+                        }`}
+                        draggable
+                        onDragStart={() => handleDragStart('ability', index)}
+                        onDragOver={(e) => handleDragOver(e, index)}
+                        onDragEnd={handleDragEnd}
+                        onDrop={() => handleDrop('ability', index)}
+                    >
                         <div className="flex items-center justify-between mb-2">
-                            <h4 className="text-sm font-bold text-marvel-yellow">Ability {index + 1}</h4>
+                            <div className="flex items-center gap-2">
+                                <div className="cursor-grab active:cursor-grabbing text-gray-500 hover:text-gray-300">
+                                    <GripVertical className="w-4 h-4" />
+                                </div>
+                                <h4 className="text-sm font-bold text-marvel-yellow">Ability {index + 1}</h4>
+                            </div>
                             <div className="flex items-center gap-2">
                                 <IconUpload icon={ability.icon} onUpload={(url) => updateAbility(ability.id, 'icon', url)} size="sm" />
                                 {ability.icon && (
@@ -1474,9 +1667,26 @@ const FormEditor: React.FC<FormEditorProps> = ({ heroData, onChange, displaySett
                 {heroData.passives.length === 0 && <p className="text-gray-500 text-sm italic">No passives added.</p>}
 
                 {heroData.passives.map((passive, index) => (
-                    <div key={passive.id} className="mb-4 p-3 bg-marvel-dark rounded">
+                    <div 
+                        key={passive.id} 
+                        className={`mb-4 p-3 bg-marvel-dark rounded transition-all ${
+                            draggedItem?.type === 'passive' && dragOverIndex === index 
+                                ? 'border-2 border-marvel-yellow border-dashed' 
+                                : 'border-2 border-transparent'
+                        }`}
+                        draggable
+                        onDragStart={() => handleDragStart('passive', index)}
+                        onDragOver={(e) => handleDragOver(e, index)}
+                        onDragEnd={handleDragEnd}
+                        onDrop={() => handleDrop('passive', index)}
+                    >
                         <div className="flex items-center justify-between mb-2">
-                            <h4 className="text-sm font-bold text-marvel-yellow">Passive {index + 1}</h4>
+                            <div className="flex items-center gap-2">
+                                <div className="cursor-grab active:cursor-grabbing text-gray-500 hover:text-gray-300">
+                                    <GripVertical className="w-4 h-4" />
+                                </div>
+                                <h4 className="text-sm font-bold text-marvel-yellow">Passive {index + 1}</h4>
+                            </div>
                             <div className="flex items-center gap-2">
                                 <IconUpload icon={passive.icon} onUpload={(url) => updatePassive(passive.id, 'icon', url)} size="sm" />
                                 {passive.icon && (

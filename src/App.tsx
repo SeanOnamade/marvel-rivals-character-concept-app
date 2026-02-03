@@ -1,18 +1,57 @@
-import { useState, useRef } from 'react';
-import { ExternalLink, Loader2 } from 'lucide-react';
+import { useState, useRef, useEffect, useCallback } from 'react';
+import { ExternalLink, Loader2, Undo2, Redo2 } from 'lucide-react';
 import { getDefaultHeroData, getDefaultDisplaySettings, HeroData, DisplaySettings } from './types';
-import { openInNewTab } from './utils';
+import { openInNewTab, preloadPresetImages } from './utils';
+import { useHistory } from './hooks/useHistory';
 import FormEditor from './components/FormEditor';
 import AbilityPageRenderer from './components/AbilityPageRenderer';
 import ExportButton from './components/ExportButton';
 
 function App() {
-    const [heroData, setHeroData] = useState<HeroData>(getDefaultHeroData());
+    const { 
+        state: heroData, 
+        setState: setHeroData, 
+        undo, 
+        redo, 
+        canUndo, 
+        canRedo 
+    } = useHistory<HeroData>(getDefaultHeroData());
+    
     const [displaySettings, setDisplaySettings] = useState<DisplaySettings>(getDefaultDisplaySettings());
     const [showPreview, setShowPreview] = useState(true);
     const [isExporting, setIsExporting] = useState(false);
     const [isOpeningTab, setIsOpeningTab] = useState(false);
     const rendererRef = useRef<HTMLDivElement>(null);
+
+    // Preload preset images on app mount
+    useEffect(() => {
+        preloadPresetImages();
+    }, []);
+
+    // Keyboard shortcuts for undo/redo
+    const handleKeyDown = useCallback((e: KeyboardEvent) => {
+        // Check if user is typing in an input/textarea
+        const target = e.target as HTMLElement;
+        if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') {
+            return;
+        }
+
+        // Ctrl+Z or Cmd+Z for undo
+        if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+            e.preventDefault();
+            undo();
+        }
+        // Ctrl+Shift+Z or Cmd+Shift+Z or Ctrl+Y for redo
+        if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) {
+            e.preventDefault();
+            redo();
+        }
+    }, [undo, redo]);
+
+    useEffect(() => {
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [handleKeyDown]);
 
     const handleOpenInNewTab = async () => {
         if (!rendererRef.current) return;
@@ -77,6 +116,26 @@ function App() {
                         </div>
                     </div>
                     <div className="flex items-center gap-3">
+                        {/* Undo/Redo Buttons */}
+                        <div className="flex items-center gap-1 mr-2">
+                            <button
+                                onClick={undo}
+                                disabled={!canUndo}
+                                className="p-2 rounded hover:bg-marvel-metal transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                                title="Undo (Ctrl+Z)"
+                            >
+                                <Undo2 size={20} className="text-gray-300" />
+                            </button>
+                            <button
+                                onClick={redo}
+                                disabled={!canRedo}
+                                className="p-2 rounded hover:bg-marvel-metal transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                                title="Redo (Ctrl+Shift+Z)"
+                            >
+                                <Redo2 size={20} className="text-gray-300" />
+                            </button>
+                        </div>
+                        
                         <button
                             onClick={() => setShowPreview(!showPreview)}
                             className="bg-marvel-border text-white px-4 py-2 rounded hover:bg-marvel-metal transition-colors"

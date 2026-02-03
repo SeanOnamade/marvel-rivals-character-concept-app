@@ -1,5 +1,37 @@
 import { domToPng } from 'modern-screenshot';
 
+// Preload images used by presets to improve switching speed
+export const preloadPresetImages = (): void => {
+    const imagesToPreload = [
+        // Doctor Strange preset
+        '/heroes/doctorstrange.png',
+        '/logos/doctor-strange.png',
+        '/icons/doctor-strange/daggers-of-denak.png',
+        '/icons/doctor-strange/cloak-of-levitation.png',
+        '/icons/doctor-strange/maelstrom-of-madness.png',
+        '/icons/doctor-strange/pentagram-of-farallah.png',
+        '/icons/doctor-strange/shield-of-the-seraphim.png',
+        '/icons/doctor-strange/price-of-magic.png',
+        '/icons/doctor-strange/eye-of-agamotto.png',
+        '/icons/teamup-gammamaelstrom.png',
+        // The Spot preset
+        '/downloads/ChatGPT_Image_Feb_2__2026__03_57_45_AM-removebg-preview.png',
+        '/logos/the-spot.png',
+        // Common backgrounds
+        '/backgrounds/marvel-rivals-main-menu-screen.png',
+        // Hero icons (commonly used in team-ups)
+        '/hero-icons/hulk_avatar.png',
+        '/hero-icons/doctor-strange_avatar.png',
+        '/hero-icons/iron-man_avatar.png',
+        '/hero-icons/spider-man_avatar.png',
+    ];
+
+    imagesToPreload.forEach(src => {
+        const img = new Image();
+        img.src = src;
+    });
+};
+
 export const exportToPNG = async (element: HTMLElement, filename: string): Promise<void> => {
     try {
         // Find the scale wrapper (parent element with transform)
