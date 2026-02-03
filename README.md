@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🦸 Marvel Rivals Ability Builder
+# Marvel Rivals Ability Builder
 
 **Create stunning custom hero ability pages that look straight out of the game**
 
@@ -15,7 +15,7 @@
 
 ---
 
-## 📸 Examples
+## Examples
 
 <div align="center">
 
@@ -29,21 +29,21 @@
 
 ---
 
-## ✨ Features
+## Features
 
-### 🎨 Pixel-Perfect Design
+### Pixel-Perfect Design
 Recreates the authentic Marvel Rivals in-game ability screen with diamond-shaped icons, glowing ultimates, yellow accent lines, and the signature dark brushed-metal aesthetic.
 
-### ⚡ Live Preview
+### Live Preview
 See your changes instantly as you edit. What you see is exactly what you'll export.
 
-### 🎮 PC & Console Support
+### PC & Console Support
 Switch between keyboard/mouse hotkeys (SHIFT, E, F, Q) and controller buttons (L1, R1, Triangle, L3+R3) with one click.
 
-### 🖼️ Full Image Control
+### Full Image Control
 Upload hero portraits with precise positioning, scaling, cropping, and edge fade controls. Add hero logos that appear behind your character.
 
-### 🎯 Complete Customization
+### Complete Customization
 - Hero name, role, and difficulty rating
 - Unlimited attacks, abilities, and passives
 - Team-up abilities with partner hero icons
@@ -53,12 +53,12 @@ Upload hero portraits with precise positioning, scaling, cropping, and edge fade
 - Additional pages (like Gambit's card forms)
 - Banner color and fold styling
 
-### 📤 High-Quality Export
+### High-Quality Export
 Export your creation as a crisp 1280×720 PNG image, ready to share on Discord, Reddit, Twitter, or anywhere else.
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
 
@@ -89,7 +89,7 @@ npm run preview
 
 ---
 
-## 🎮 How to Use
+## How to Use
 
 1. **Choose a Starting Point**
    - Start with a blank template, or
@@ -115,7 +115,7 @@ npm run preview
 
 ---
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 | Technology | Purpose |
 |------------|---------|
@@ -128,7 +128,7 @@ npm run preview
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 marvel-rivals-template/
@@ -156,7 +156,7 @@ marvel-rivals-template/
 
 ---
 
-## 🎨 Customization
+## Customization
 
 ### Adding New Hero Presets
 
@@ -188,24 +188,24 @@ The Marvel Rivals palette is defined in `tailwind.config.js`:
 
 ---
 
-## 🤝 Contributing
+## Contributing
 
 Contributions are welcome! Feel free to:
 
-- 🐛 Report bugs
-- 💡 Suggest features
-- 🎨 Add new hero presets
-- 🔧 Submit pull requests
+- Report bugs
+- Suggest features
+- Add new hero presets
+- Submit pull requests
 
 ---
 
-## 📄 License
+## License
 
 MIT License - use this project however you like!
 
 ---
 
-## ⚠️ Disclaimer
+## Disclaimer
 
 This is a **fan-made tool** and is not affiliated with, endorsed by, or connected to Marvel, NetEase Games, or any official Marvel Rivals properties. All Marvel characters and related elements are trademarks of Marvel Entertainment, LLC.
 

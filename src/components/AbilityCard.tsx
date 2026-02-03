@@ -1,5 +1,3 @@
-import React from 'react';
-
 interface AbilityCardProps {
     name: string;
     description: string;
@@ -12,7 +10,7 @@ const AbilityCard: React.FC<AbilityCardProps> = ({
     name,
     description,
     hotkey,
-    variant = 'ability'
+    variant: _variant = 'ability'
 }) => {
     return (
         <div className="bg-ability-card rounded p-3 mb-3 hover:border-glow transition-all">

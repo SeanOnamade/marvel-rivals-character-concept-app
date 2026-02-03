@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { HeroData, Role, Attack, Ability, TeamUpAbility, DisplaySettings, ContentPage, HeroImageSettings, HeroInfoSettings, CropBounds, FoldSettings, createDefaultAttack, createDefaultAbility, createDefaultTeamUp, createDefaultPassive, createDefaultContentPage, getDefaultPortraitSettings, getDefaultHeroInfoSettings, getDefaultCropBounds, getDefaultHeroData, getDefaultFoldSettings, HERO_PRESETS, HERO_ICONS, CONSOLE_BUTTON_OPTIONS, CONSOLE_ATTACK_OPTIONS, getConsoleEquivalent } from '../types';
-import { Plus, Trash2, Upload, Monitor, Gamepad2, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Move, Type, Crop } from 'lucide-react';
+import { useState } from 'react';
+import { HeroData, Role, Attack, Ability, TeamUpAbility, DisplaySettings, ContentPage, CropBounds, createDefaultAttack, createDefaultAbility, createDefaultTeamUp, createDefaultPassive, createDefaultContentPage, getDefaultPortraitSettings, getDefaultHeroInfoSettings, getDefaultCropBounds, getDefaultHeroData, getDefaultFoldSettings, HERO_PRESETS, HERO_ICONS, CONSOLE_BUTTON_OPTIONS, CONSOLE_ATTACK_OPTIONS } from '../types';
+import { Plus, Trash2, Upload, Monitor, Gamepad2, ChevronDown, ChevronUp, ChevronRight, Move, Type, Crop } from 'lucide-react';
 import ImageCropEditor from './ImageCropEditor';
 
 interface FormEditorProps {
@@ -249,7 +249,8 @@ const FormEditor: React.FC<FormEditorProps> = ({ heroData, onChange, displaySett
         onChange({ ...heroData, teamUpAbilities: newTeamUps });
     };
 
-    const movePartnerIcon = (teamUpId: string, fromIndex: number, toIndex: number) => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const _movePartnerIcon = (teamUpId: string, fromIndex: number, toIndex: number) => {
         const newTeamUps = heroData.teamUpAbilities.map(tu => {
             if (tu.id === teamUpId) {
                 const newIcons = [...(tu.partnerIcons || [])];

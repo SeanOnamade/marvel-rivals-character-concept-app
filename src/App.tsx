@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import { useState, useRef } from 'react';
 import { ExternalLink, Loader2 } from 'lucide-react';
 import { getDefaultHeroData, getDefaultDisplaySettings, HeroData, DisplaySettings } from './types';
 import { openInNewTab } from './utils';
