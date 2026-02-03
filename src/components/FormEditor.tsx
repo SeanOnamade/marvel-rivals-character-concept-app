@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { HeroData, Role, Attack, Ability, TeamUpAbility, DisplaySettings, ContentPage, CropBounds, createDefaultAttack, createDefaultAbility, createDefaultTeamUp, createDefaultPassive, createDefaultContentPage, getDefaultPortraitSettings, getDefaultHeroInfoSettings, getDefaultCropBounds, getDefaultHeroData, getDefaultFoldSettings, HERO_PRESETS, HERO_ICONS, CONSOLE_BUTTON_OPTIONS, CONSOLE_ATTACK_OPTIONS } from '../types';
 import { Plus, Trash2, Upload, Monitor, Gamepad2, ChevronDown, ChevronUp, ChevronRight, Move, Type, Crop } from 'lucide-react';
 import ImageCropEditor from './ImageCropEditor';
@@ -51,7 +51,7 @@ interface ColoredTextareaProps {
 }
 
 const ColoredTextarea: React.FC<ColoredTextareaProps> = ({ value, onChange, placeholder, rows = 2 }) => {
-    const textareaRef = React.useRef<HTMLTextAreaElement>(null);
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
 
     const wrapWithColor = (color: 'green' | 'blue' | 'orange') => {
         const textarea = textareaRef.current;
@@ -242,22 +242,6 @@ const FormEditor: React.FC<FormEditorProps> = ({ heroData, onChange, displaySett
             if (tu.id === teamUpId) {
                 const newIcons = [...(tu.partnerIcons || [])];
                 newIcons.splice(iconIndex, 1);
-                return { ...tu, partnerIcons: newIcons };
-            }
-            return tu;
-        });
-        onChange({ ...heroData, teamUpAbilities: newTeamUps });
-    };
-
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const _movePartnerIcon = (teamUpId: string, fromIndex: number, toIndex: number) => {
-        const newTeamUps = heroData.teamUpAbilities.map(tu => {
-            if (tu.id === teamUpId) {
-                const newIcons = [...(tu.partnerIcons || [])];
-                if (toIndex >= 0 && toIndex < newIcons.length) {
-                    const [moved] = newIcons.splice(fromIndex, 1);
-                    newIcons.splice(toIndex, 0, moved);
-                }
                 return { ...tu, partnerIcons: newIcons };
             }
             return tu;
