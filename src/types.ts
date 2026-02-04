@@ -2,6 +2,15 @@
 export type Role = 'Strategist' | 'Duelist' | 'Vanguard';
 export type ControlScheme = 'PC' | 'Console';
 
+// Template file format for saving/loading hero configurations
+export interface HeroTemplate {
+    version: number;           // Schema version for future migrations
+    name: string;              // Hero name from the template
+    exportedAt: string;        // ISO date string
+    heroData: HeroData;        // Full hero configuration
+    displaySettings: Partial<DisplaySettings>;  // Display preferences
+}
+
 export interface Ability {
     id: string;
     name: string;

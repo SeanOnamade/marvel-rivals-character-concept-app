@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { HeroData, Role, Attack, Ability, TeamUpAbility, DisplaySettings, ContentPage, CropBounds, createDefaultAttack, createDefaultAbility, createDefaultTeamUp, createDefaultPassive, createDefaultContentPage, getDefaultPortraitSettings, getDefaultHeroInfoSettings, getDefaultCropBounds, getDefaultHeroData, getDefaultFoldSettings, HERO_PRESETS, HERO_ICONS, CONSOLE_BUTTON_OPTIONS, CONSOLE_ATTACK_OPTIONS } from '../types';
-import { Plus, Trash2, Upload, Monitor, Gamepad2, ChevronDown, ChevronUp, ChevronRight, Move, Type, Crop, GripVertical } from 'lucide-react';
+import { HeroData, Role, Attack, Ability, TeamUpAbility, DisplaySettings, ContentPage, CropBounds, createDefaultAttack, createDefaultAbility, createDefaultTeamUp, createDefaultPassive, createDefaultContentPage, getDefaultPortraitSettings, getDefaultHeroInfoSettings, getDefaultCropBounds, getDefaultHeroData, getDefaultFoldSettings, getDefaultDisplaySettings, HERO_PRESETS, HERO_ICONS, CONSOLE_BUTTON_OPTIONS, CONSOLE_ATTACK_OPTIONS } from '../types';
+import { downloadTemplate, loadTemplateFromFile } from '../utils';
+import { Plus, Trash2, Upload, Monitor, Gamepad2, ChevronDown, ChevronUp, ChevronRight, Move, Type, Crop, GripVertical, Download, FolderOpen } from 'lucide-react';
 import ImageCropEditor from './ImageCropEditor';
 
 interface FormEditorProps {
@@ -8,6 +9,7 @@ interface FormEditorProps {
     onChange: (data: HeroData) => void;
     displaySettings: DisplaySettings;
     onDisplaySettingsChange: (settings: DisplaySettings) => void;
+    onBatchChange?: (heroData: HeroData, displaySettings: DisplaySettings) => void;
 }
 
 interface IconUploadProps {
@@ -168,7 +170,7 @@ const BANNER_PRESETS = [
     { name: 'Yellow', color: '#ca8a04' },
 ];
 
-const FormEditor: React.FC<FormEditorProps> = ({ heroData, onChange, displaySettings, onDisplaySettingsChange }) => {
+const FormEditor: React.FC<FormEditorProps> = ({ heroData, onChange, displaySettings, onDisplaySettingsChange, onBatchChange }) => {
     const [showCropEditor, setShowCropEditor] = useState(false);
     const [foldExpanded, setFoldExpanded] = useState(false);
     const [heroImageExpanded, setHeroImageExpanded] = useState(false);
@@ -178,6 +180,71 @@ const FormEditor: React.FC<FormEditorProps> = ({ heroData, onChange, displaySett
     // Drag and drop state
     const [draggedItem, setDraggedItem] = useState<{ type: string; index: number } | null>(null);
     const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+    
+    // Template loading
+    const templateInputRef = useRef<HTMLInputElement>(null);
+    const [templateError, setTemplateError] = useState<string | null>(null);
+    const [pendingTemplate, setPendingTemplate] = useState<{
+        heroData: HeroData;
+        displaySettings?: Partial<DisplaySettings>;
+        name: string;
+        role: string;
+        abilitiesCount: number;
+        attacksCount: number;
+    } | null>(null);
+    const [showSuccessToast, setShowSuccessToast] = useState(false);
+
+    const handleLoadTemplate = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        
+        try {
+            setTemplateError(null);
+            const template = await loadTemplateFromFile(file);
+            
+            // Show confirmation modal with preview instead of applying immediately
+            setPendingTemplate({
+                heroData: template.heroData,
+                displaySettings: template.displaySettings,
+                name: template.heroData.name || 'Untitled Hero',
+                role: template.heroData.role || 'Unknown',
+                abilitiesCount: (template.heroData.abilities?.length || 0) + (template.heroData.passives?.length || 0),
+                attacksCount: template.heroData.attacks?.length || 0,
+            });
+        } catch (error) {
+            setTemplateError(error instanceof Error ? error.message : 'Failed to load template.');
+        }
+        
+        // Reset input so the same file can be loaded again
+        e.target.value = '';
+    };
+
+    const confirmLoadTemplate = () => {
+        if (!pendingTemplate) return;
+        
+        const newDisplaySettings = pendingTemplate.displaySettings
+            ? { ...getDefaultDisplaySettings(), ...pendingTemplate.displaySettings }
+            : displaySettings;
+        
+        // Use batch change if available (single undo step), otherwise fall back to separate calls
+        if (onBatchChange) {
+            onBatchChange(pendingTemplate.heroData, newDisplaySettings);
+        } else {
+            onChange(pendingTemplate.heroData);
+            if (pendingTemplate.displaySettings) {
+                onDisplaySettingsChange(newDisplaySettings);
+            }
+        }
+        
+        // Close modal and show success toast
+        setPendingTemplate(null);
+        setShowSuccessToast(true);
+        setTimeout(() => setShowSuccessToast(false), 3000);
+    };
+
+    const cancelLoadTemplate = () => {
+        setPendingTemplate(null);
+    };
     
     // Auto-scroll during drag
     const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -499,15 +566,20 @@ const FormEditor: React.FC<FormEditorProps> = ({ heroData, onChange, displaySett
                 <div className="flex flex-wrap gap-2">
                     <button
                         onClick={() => {
-                            onChange(getDefaultHeroData());
-                            // Reset display settings to defaults
-                            onDisplaySettingsChange({
+                            const newHeroData = getDefaultHeroData();
+                            const newDisplaySettings = {
                                 ...displaySettings,
                                 contentOffsetY: 0,
                                 abilitySpacing: 16,
                                 showBackground: false,
                                 customBackground: undefined,
-                            });
+                            };
+                            if (onBatchChange) {
+                                onBatchChange(newHeroData, newDisplaySettings);
+                            } else {
+                                onChange(newHeroData);
+                                onDisplaySettingsChange(newDisplaySettings);
+                            }
                         }}
                         className="px-3 py-2 bg-gray-700 hover:bg-gray-600 rounded text-sm transition-colors"
                     >
@@ -517,13 +589,17 @@ const FormEditor: React.FC<FormEditorProps> = ({ heroData, onChange, displaySett
                         <button
                             key={preset.name}
                             onClick={() => {
-                                onChange(preset.getData());
-                                if (preset.getDisplaySettings) {
-                                    const presetDisplaySettings = preset.getDisplaySettings();
-                                    onDisplaySettingsChange({
-                                        ...displaySettings,
-                                        ...presetDisplaySettings,
-                                    });
+                                const newHeroData = preset.getData();
+                                const presetDisplaySettings = preset.getDisplaySettings?.() || {};
+                                const newDisplaySettings = {
+                                    ...displaySettings,
+                                    ...presetDisplaySettings,
+                                };
+                                if (onBatchChange) {
+                                    onBatchChange(newHeroData, newDisplaySettings);
+                                } else {
+                                    onChange(newHeroData);
+                                    onDisplaySettingsChange(newDisplaySettings);
                                 }
                             }}
                             className="px-3 py-2 bg-blue-600 hover:bg-blue-500 rounded text-sm transition-colors"
@@ -533,6 +609,40 @@ const FormEditor: React.FC<FormEditorProps> = ({ heroData, onChange, displaySett
                     ))}
                 </div>
                 <p className="text-xs text-gray-500 mt-2">Load a preset template or start fresh. Your current work will be replaced.</p>
+                
+                {/* Template Save/Load */}
+                <div className="mt-4 pt-4 border-t border-marvel-border">
+                    <h4 className="text-sm font-semibold mb-2 text-gray-300">Your Templates</h4>
+                    <div className="flex flex-wrap gap-2">
+                        <button
+                            onClick={() => downloadTemplate(heroData, displaySettings)}
+                            className="flex items-center gap-2 px-3 py-2 bg-green-600 hover:bg-green-500 rounded text-sm transition-colors"
+                        >
+                            <Download className="w-4 h-4" />
+                            Download Template
+                        </button>
+                        <button
+                            onClick={() => templateInputRef.current?.click()}
+                            className="flex items-center gap-2 px-3 py-2 bg-purple-600 hover:bg-purple-500 rounded text-sm transition-colors"
+                        >
+                            <FolderOpen className="w-4 h-4" />
+                            Load Template...
+                        </button>
+                        <input
+                            ref={templateInputRef}
+                            type="file"
+                            accept=".json,application/json"
+                            onChange={handleLoadTemplate}
+                            className="hidden"
+                        />
+                    </div>
+                    <p className="text-xs text-gray-500 mt-2">
+                        Save your current hero as a .json file or load a previously saved template.
+                    </p>
+                    {templateError && (
+                        <p className="text-xs text-red-400 mt-2">{templateError}</p>
+                    )}
+                </div>
             </div>
 
             {/* Display Settings */}
@@ -1821,6 +1931,65 @@ const FormEditor: React.FC<FormEditorProps> = ({ heroData, onChange, displaySett
                     onApply={handleCropApply}
                     onCancel={() => setShowCropEditor(false)}
                 />
+            )}
+
+            {/* Template Load Confirmation Modal */}
+            {pendingTemplate && (
+                <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+                    <div className="bg-marvel-metal border border-marvel-border rounded-lg p-6 max-w-md w-full mx-4 shadow-2xl">
+                        <h3 className="text-xl font-bold text-marvel-yellow mb-4">Load Template?</h3>
+                        
+                        {/* Template Preview */}
+                        <div className="bg-marvel-dark rounded-lg p-4 mb-4">
+                            <div className="flex items-center gap-3 mb-3">
+                                <div className="w-12 h-12 rounded-full bg-marvel-border flex items-center justify-center text-2xl font-bold text-marvel-yellow">
+                                    {pendingTemplate.name.charAt(0).toUpperCase()}
+                                </div>
+                                <div>
+                                    <p className="font-bold text-white text-lg">{pendingTemplate.name}</p>
+                                    <p className="text-sm text-gray-400">{pendingTemplate.role}</p>
+                                </div>
+                            </div>
+                            <div className="flex gap-4 text-sm text-gray-300">
+                                <span>{pendingTemplate.attacksCount} Attack{pendingTemplate.attacksCount !== 1 ? 's' : ''}</span>
+                                <span>{pendingTemplate.abilitiesCount}Abilit{pendingTemplate.abilitiesCount !== 1 ? 'ies' : 'y'}</span>
+                            </div>
+                        </div>
+                        
+                        {/* Warning */}
+                        <p className="text-sm text-gray-300 mb-6">
+                            This will <span className="text-yellow-400 font-semibold">replace your current work</span>. Make sure to download your current template first if you want to keep it.
+                        </p>
+                        
+                        {/* Actions */}
+                        <div className="flex gap-3 justify-end">
+                            <button
+                                onClick={cancelLoadTemplate}
+                                className="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded text-sm transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={confirmLoadTemplate}
+                                className="px-4 py-2 bg-green-600 hover:bg-green-500 rounded text-sm font-semibold transition-colors"
+                            >
+                                Load Template
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Success Toast */}
+            {showSuccessToast && (
+                <div className="fixed bottom-6 right-6 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg z-50 animate-pulse">
+                    <div className="flex items-center gap-2">
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                        <span className="font-semibold">Template loaded successfully!</span>
+                    </div>
+                </div>
             )}
         </div>
     );

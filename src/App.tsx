@@ -7,17 +7,51 @@ import FormEditor from './components/FormEditor';
 import AbilityPageRenderer from './components/AbilityPageRenderer';
 import ExportButton from './components/ExportButton';
 
+// Combined state for undo/redo to track both heroData and displaySettings together
+interface AppState {
+    heroData: HeroData;
+    displaySettings: DisplaySettings;
+}
+
 function App() {
     const { 
-        state: heroData, 
-        setState: setHeroData, 
+        state: appState, 
+        setState: setAppState, 
         undo, 
         redo, 
         canUndo, 
         canRedo 
-    } = useHistory<HeroData>(getDefaultHeroData());
+    } = useHistory<AppState>({
+        heroData: getDefaultHeroData(),
+        displaySettings: getDefaultDisplaySettings(),
+    });
     
-    const [displaySettings, setDisplaySettings] = useState<DisplaySettings>(getDefaultDisplaySettings());
+    // Destructure for easier access
+    const { heroData, displaySettings } = appState;
+    
+    // Wrapper to update heroData while keeping displaySettings
+    const setHeroData = useCallback((newHeroData: HeroData | ((prev: HeroData) => HeroData)) => {
+        setAppState((prev) => ({
+            ...prev,
+            heroData: typeof newHeroData === 'function' ? newHeroData(prev.heroData) : newHeroData,
+        }));
+    }, [setAppState]);
+    
+    // Wrapper to update displaySettings while keeping heroData
+    const setDisplaySettings = useCallback((newSettings: DisplaySettings | ((prev: DisplaySettings) => DisplaySettings)) => {
+        setAppState((prev) => ({
+            ...prev,
+            displaySettings: typeof newSettings === 'function' ? newSettings(prev.displaySettings) : newSettings,
+        }));
+    }, [setAppState]);
+    
+    // Batch update both heroData and displaySettings in a single history entry
+    const setBoth = useCallback((newHeroData: HeroData, newDisplaySettings: DisplaySettings) => {
+        setAppState({
+            heroData: newHeroData,
+            displaySettings: newDisplaySettings,
+        });
+    }, [setAppState]);
     const [showPreview, setShowPreview] = useState(true);
     const [isExporting, setIsExporting] = useState(false);
     const [isOpeningTab, setIsOpeningTab] = useState(false);
@@ -177,6 +211,7 @@ function App() {
                         onChange={setHeroData}
                         displaySettings={displaySettings}
                         onDisplaySettingsChange={setDisplaySettings}
+                        onBatchChange={setBoth}
                     />
                 </div>
 

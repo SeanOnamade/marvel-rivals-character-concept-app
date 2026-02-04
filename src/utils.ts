@@ -1,4 +1,5 @@
 import { domToPng } from 'modern-screenshot';
+import { HeroData, DisplaySettings, HeroTemplate, getDefaultPortraitSettings, getDefaultHeroInfoSettings } from './types';
 
 // Preload images used by presets to improve switching speed
 export const preloadPresetImages = (): void => {
@@ -243,4 +244,167 @@ export const parseColoredText = (text: string): TextSegment[] => {
     }
     
     return segments.length > 0 ? segments : [{ text }];
+};
+
+// Template version for schema migrations
+const TEMPLATE_VERSION = 1;
+
+/**
+ * Export the current hero configuration as a downloadable JSON file
+ */
+export const downloadTemplate = (heroData: HeroData, displaySettings: DisplaySettings): void => {
+    const template: HeroTemplate = {
+        version: TEMPLATE_VERSION,
+        name: heroData.name || 'Untitled Hero',
+        exportedAt: new Date().toISOString(),
+        heroData,
+        displaySettings: {
+            showRoleBadge: displaySettings.showRoleBadge,
+            controlScheme: displaySettings.controlScheme,
+            showBackground: displaySettings.showBackground,
+            customBackground: displaySettings.customBackground,
+            foldSettings: displaySettings.foldSettings,
+            useImageBanner: displaySettings.useImageBanner,
+            imageBannerSettings: displaySettings.imageBannerSettings,
+            showUltimateLightning: displaySettings.showUltimateLightning,
+            contentOffsetY: displaySettings.contentOffsetY,
+            abilitySpacing: displaySettings.abilitySpacing,
+        },
+    };
+
+    const json = JSON.stringify(template, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    
+    // Create filename from hero name
+    const safeName = (heroData.name || 'untitled')
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-|-$/g, '');
+    const filename = `${safeName}-template.json`;
+    
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    link.click();
+    
+    // Clean up
+    URL.revokeObjectURL(url);
+};
+
+/**
+ * Parse and validate an imported template file
+ */
+export const parseTemplateFile = (fileContent: string): HeroTemplate => {
+    let parsed: unknown;
+    
+    try {
+        parsed = JSON.parse(fileContent);
+    } catch {
+        throw new Error('Invalid JSON file. Please select a valid template file.');
+    }
+    
+    // Basic validation
+    if (!parsed || typeof parsed !== 'object') {
+        throw new Error('Invalid template format.');
+    }
+    
+    const template = parsed as Record<string, unknown>;
+    
+    // Check for required fields
+    if (!template.heroData || typeof template.heroData !== 'object') {
+        throw new Error('Template is missing hero data.');
+    }
+    
+    // Check hero data has required fields
+    const heroData = template.heroData as Record<string, unknown>;
+    if (typeof heroData.name !== 'string') {
+        throw new Error('Template hero data is missing a name.');
+    }
+    
+    // Ensure version exists (default to 1 for older templates)
+    if (typeof template.version !== 'number') {
+        template.version = 1;
+    }
+    
+    // Apply defensive defaults for arrays that might be missing or corrupted
+    // This ensures the app doesn't crash if someone loads a partial/hand-edited template
+    if (!Array.isArray(heroData.attacks)) {
+        heroData.attacks = [];
+    }
+    if (!Array.isArray(heroData.abilities)) {
+        heroData.abilities = [];
+    }
+    if (!Array.isArray(heroData.passives)) {
+        heroData.passives = [];
+    }
+    if (!Array.isArray(heroData.teamUpAbilities)) {
+        heroData.teamUpAbilities = [];
+    }
+    if (!Array.isArray(heroData.additionalPages)) {
+        heroData.additionalPages = [];
+    }
+    
+    // Ensure ultimate exists with sensible defaults
+    if (!heroData.ultimate || typeof heroData.ultimate !== 'object') {
+        heroData.ultimate = {
+            id: 'default-ult',
+            name: 'ULTIMATE',
+            description: 'Ultimate ability description.',
+            hotkey: 'Q',
+            hotkeyConsole: 'L1+R1',
+        };
+    }
+    
+    // Ensure required string/number fields have defaults
+    if (typeof heroData.role !== 'string') {
+        heroData.role = 'Vanguard';
+    }
+    if (typeof heroData.difficulty !== 'number') {
+        heroData.difficulty = 1;
+    }
+    if (typeof heroData.bannerColor !== 'string') {
+        heroData.bannerColor = '#dc2626';
+    }
+    
+    // Ensure settings objects exist with sensible defaults
+    if (!heroData.portraitSettings || typeof heroData.portraitSettings !== 'object') {
+        heroData.portraitSettings = getDefaultPortraitSettings();
+    }
+    if (!heroData.heroInfoSettings || typeof heroData.heroInfoSettings !== 'object') {
+        heroData.heroInfoSettings = getDefaultHeroInfoSettings();
+    }
+    
+    // Future: Add migration logic for older versions here
+    // if (template.version < TEMPLATE_VERSION) {
+    //     template = migrateTemplate(template);
+    // }
+    
+    return template as unknown as HeroTemplate;
+};
+
+/**
+ * Load a template file and return the parsed data
+ * Returns a promise that resolves with the template data or rejects with an error
+ */
+export const loadTemplateFromFile = (file: File): Promise<HeroTemplate> => {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        
+        reader.onload = (event) => {
+            try {
+                const content = event.target?.result as string;
+                const template = parseTemplateFile(content);
+                resolve(template);
+            } catch (error) {
+                reject(error);
+            }
+        };
+        
+        reader.onerror = () => {
+            reject(new Error('Failed to read the file.'));
+        };
+        
+        reader.readAsText(file);
+    });
 };

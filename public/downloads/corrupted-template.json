@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "name": "Corrupted Hero",
+  "exportedAt": "2026-02-04T12:00:00.000Z",
+  "heroData": {
+    "name": "CORRUPTED HERO",
+    "role": 12345,
+    "difficulty": "not a number",
+    "bannerColor": null,
+    "attacks": "this should be an array",
+    "abilities": { "wrong": "type" },
+    "passives": null,
+    "teamUpAbilities": null,
+    "ultimate": "also wrong",
+    "portraitSettings": [],
+    "heroInfoSettings": "nope",
+    "additionalPages": false
+  },
+  "displaySettings": {
+    "showBackground": "yes please",
+    "contentOffsetY": "way up"
+  }
+}
