@@ -10,6 +10,7 @@ interface FormEditorProps {
     displaySettings: DisplaySettings;
     onDisplaySettingsChange: (settings: DisplaySettings) => void;
     onBatchChange?: (heroData: HeroData, displaySettings: DisplaySettings) => void;
+    rendererRef?: React.RefObject<HTMLDivElement | null>;
 }
 
 interface IconUploadProps {
@@ -170,7 +171,7 @@ const BANNER_PRESETS = [
     { name: 'Yellow', color: '#ca8a04' },
 ];
 
-const FormEditor: React.FC<FormEditorProps> = ({ heroData, onChange, displaySettings, onDisplaySettingsChange, onBatchChange }) => {
+const FormEditor: React.FC<FormEditorProps> = ({ heroData, onChange, displaySettings, onDisplaySettingsChange, onBatchChange, rendererRef }) => {
     const [showCropEditor, setShowCropEditor] = useState(false);
     const [foldExpanded, setFoldExpanded] = useState(false);
     const [heroImageExpanded, setHeroImageExpanded] = useState(false);
@@ -191,8 +192,11 @@ const FormEditor: React.FC<FormEditorProps> = ({ heroData, onChange, displaySett
         role: string;
         abilitiesCount: number;
         attacksCount: number;
+        thumbnail?: string;
     } | null>(null);
     const [showSuccessToast, setShowSuccessToast] = useState(false);
+    const [isDownloading, setIsDownloading] = useState(false);
+    const [showNoPreviewWarning, setShowNoPreviewWarning] = useState(false);
 
     const handleLoadTemplate = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -210,6 +214,7 @@ const FormEditor: React.FC<FormEditorProps> = ({ heroData, onChange, displaySett
                 role: template.heroData.role || 'Unknown',
                 abilitiesCount: (template.heroData.abilities?.length || 0) + (template.heroData.passives?.length || 0),
                 attacksCount: template.heroData.attacks?.length || 0,
+                thumbnail: template.thumbnail,
             });
         } catch (error) {
             setTemplateError(error instanceof Error ? error.message : 'Failed to load template.');
@@ -217,6 +222,30 @@ const FormEditor: React.FC<FormEditorProps> = ({ heroData, onChange, displaySett
         
         // Reset input so the same file can be loaded again
         e.target.value = '';
+    };
+
+    const handleDownloadTemplate = async () => {
+        // Check if preview is visible for thumbnail capture
+        if (!rendererRef?.current) {
+            setShowNoPreviewWarning(true);
+            return;
+        }
+        
+        await executeDownload(true);
+    };
+
+    const executeDownload = async (withThumbnail: boolean) => {
+        setIsDownloading(true);
+        setShowNoPreviewWarning(false);
+        try {
+            await downloadTemplate(
+                heroData, 
+                displaySettings, 
+                withThumbnail ? rendererRef?.current : null
+            );
+        } finally {
+            setIsDownloading(false);
+        }
     };
 
     const confirmLoadTemplate = () => {
@@ -615,11 +644,12 @@ const FormEditor: React.FC<FormEditorProps> = ({ heroData, onChange, displaySett
                     <h4 className="text-sm font-semibold mb-2 text-gray-300">Your Templates</h4>
                     <div className="flex flex-wrap gap-2">
                         <button
-                            onClick={() => downloadTemplate(heroData, displaySettings)}
-                            className="flex items-center gap-2 px-3 py-2 bg-green-600 hover:bg-green-500 rounded text-sm transition-colors"
+                            onClick={handleDownloadTemplate}
+                            disabled={isDownloading}
+                            className="flex items-center gap-2 px-3 py-2 bg-green-600 hover:bg-green-500 rounded text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            <Download className="w-4 h-4" />
-                            Download Template
+                            <Download className={`w-4 h-4 ${isDownloading ? 'animate-pulse' : ''}`} />
+                            {isDownloading ? 'Saving...' : 'Download Template'}
                         </button>
                         <button
                             onClick={() => templateInputRef.current?.click()}
@@ -1936,10 +1966,21 @@ const FormEditor: React.FC<FormEditorProps> = ({ heroData, onChange, displaySett
             {/* Template Load Confirmation Modal */}
             {pendingTemplate && (
                 <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-                    <div className="bg-marvel-metal border border-marvel-border rounded-lg p-6 max-w-md w-full mx-4 shadow-2xl">
+                    <div className="bg-marvel-metal border border-marvel-border rounded-lg p-6 max-w-lg w-full mx-4 shadow-2xl">
                         <h3 className="text-xl font-bold text-marvel-yellow mb-4">Load Template?</h3>
                         
-                        {/* Template Preview */}
+                        {/* Thumbnail Preview (if available) */}
+                        {pendingTemplate.thumbnail && (
+                            <div className="mb-4 rounded-lg overflow-hidden border border-marvel-border bg-marvel-dark">
+                                <img 
+                                    src={pendingTemplate.thumbnail} 
+                                    alt={`Preview of ${pendingTemplate.name}`}
+                                    className="w-full h-auto"
+                                />
+                            </div>
+                        )}
+                        
+                        {/* Template Info */}
                         <div className="bg-marvel-dark rounded-lg p-4 mb-4">
                             <div className="flex items-center gap-3 mb-3">
                                 <div className="w-12 h-12 rounded-full bg-marvel-border flex items-center justify-center text-2xl font-bold text-marvel-yellow">
@@ -1952,7 +1993,7 @@ const FormEditor: React.FC<FormEditorProps> = ({ heroData, onChange, displaySett
                             </div>
                             <div className="flex gap-4 text-sm text-gray-300">
                                 <span>{pendingTemplate.attacksCount} Attack{pendingTemplate.attacksCount !== 1 ? 's' : ''}</span>
-                                <span>{pendingTemplate.abilitiesCount}Abilit{pendingTemplate.abilitiesCount !== 1 ? 'ies' : 'y'}</span>
+                                <span>{pendingTemplate.abilitiesCount} Abilit{pendingTemplate.abilitiesCount !== 1 ? 'ies' : 'y'}</span>
                             </div>
                         </div>
                         
@@ -1974,6 +2015,46 @@ const FormEditor: React.FC<FormEditorProps> = ({ heroData, onChange, displaySett
                                 className="px-4 py-2 bg-green-600 hover:bg-green-500 rounded text-sm font-semibold transition-colors"
                             >
                                 Load Template
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* No Preview Warning Modal */}
+            {showNoPreviewWarning && (
+                <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+                    <div className="bg-marvel-metal border border-marvel-border rounded-lg p-6 max-w-md w-full mx-4 shadow-2xl">
+                        <div className="flex items-start gap-3 mb-4">
+                            <div className="w-10 h-10 rounded-full bg-yellow-500/20 flex items-center justify-center flex-shrink-0">
+                                <svg className="w-5 h-5 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                </svg>
+                            </div>
+                            <div>
+                                <h3 className="text-lg font-bold text-white mb-1">Preview Hidden</h3>
+                                <p className="text-sm text-gray-300">
+                                    The template will be saved without a thumbnail preview image.
+                                </p>
+                            </div>
+                        </div>
+                        
+                        <p className="text-sm text-gray-400 mb-6">
+                            Show the preview panel first to include a thumbnail, or continue without one.
+                        </p>
+                        
+                        <div className="flex gap-3 justify-end">
+                            <button
+                                onClick={() => setShowNoPreviewWarning(false)}
+                                className="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded text-sm transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={() => executeDownload(false)}
+                                className="px-4 py-2 bg-yellow-600 hover:bg-yellow-500 rounded text-sm font-semibold transition-colors"
+                            >
+                                Continue Without Thumbnail
                             </button>
                         </div>
                     </div>

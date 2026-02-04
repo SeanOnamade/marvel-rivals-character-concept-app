@@ -1,0 +1,145 @@
+{
+  "version": 1,
+  "name": "DOCTOR STRANGE",
+  "exportedAt": "2026-02-04T10:08:31.272Z",
+  "heroData": {
+    "name": "DOCTOR STRANGE",
+    "role": "Vanguard",
+    "difficulty": 2,
+    "bannerColor": "#dc2626",
+    "portraitImage": "/heroes/doctorstrange.png",
+    "heroLogo": "/logos/doctor-strange.png",
+    "heroLogoSettings": {
+      "offsetX": -60,
+      "offsetY": 54,
+      "scale": 1.3
+    },
+    "portraitSettings": {
+      "scale": 1.1,
+      "offsetX": -7,
+      "offsetY": 25,
+      "fadeAmount": 50,
+      "crop": {
+        "top": 0,
+        "left": 0,
+        "right": 0,
+        "bottom": 45
+      }
+    },
+    "heroInfoSettings": {
+      "offsetX": 54,
+      "offsetY": 43
+    },
+    "attacks": [
+      {
+        "id": "1teftoj",
+        "name": "DAGGERS OF DENAK",
+        "description": "Cast Daggers of Denak forward.",
+        "hotkey": "LMB",
+        "hotkeyConsole": "R2",
+        "icon": "/icons/doctor-strange/daggers-of-denak.png",
+        "iconScale": 0.9
+      }
+    ],
+    "teamUpAbilities": [
+      {
+        "id": "9zgdrvk",
+        "name": "GAMMA MAELSTROM",
+        "description": "Hulk charges Doctor Strange and Iron Man with gamma radiation. When Doctor Strange uses Maelstrom of Madness, he unleashes excess gamma energy. When Iron Man uses Armor Overdrive, he will initiate a gamma upgrade.",
+        "hotkey": "E",
+        "hotkeyConsole": "D-Pad",
+        "icon": "/icons/teamup-gammamaelstrom.png",
+        "isAnchor": false,
+        "anchorIcon": "/hero-icons/hulk_avatar.png",
+        "partnerIcons": [
+          "/hero-icons/doctor-strange_avatar.png",
+          "/hero-icons/iron-man_avatar.png"
+        ]
+      }
+    ],
+    "abilities": [
+      {
+        "id": "bmqf1m9",
+        "name": "CLOAK OF LEVITATION",
+        "description": "Ascend then enter a brief state of sustained flight.",
+        "hotkey": "LSHIFT",
+        "hotkeyConsole": "L1",
+        "icon": "/icons/doctor-strange/cloak-of-levitation.png",
+        "iconScale": 0.8
+      },
+      {
+        "id": "1ji6byw",
+        "name": "MAELSTROM OF MADNESS",
+        "description": "Release [orange]Dark Magic[/orange] to deal damage to nearby enemies.",
+        "hotkey": "E",
+        "hotkeyConsole": "R1",
+        "icon": "/icons/doctor-strange/maelstrom-of-madness.png",
+        "iconScale": 0.7
+      },
+      {
+        "id": "tb9uydh",
+        "name": "PENTAGRAM OF FARALLAH",
+        "description": "Open portals between two locations, enabling all units to travel through them.",
+        "hotkey": "F",
+        "hotkeyConsole": "Triangle",
+        "icon": "/icons/doctor-strange/pentagram-of-farallah.png",
+        "iconScale": 0.7
+      },
+      {
+        "id": "w636fp5",
+        "name": "SHIELD OF THE SERAPHIM",
+        "description": "Create a protective barrier against damage.",
+        "hotkey": "RMB",
+        "hotkeyConsole": "L2",
+        "icon": "/icons/doctor-strange/shield-of-the-seraphim.png",
+        "iconScale": 0.9
+      }
+    ],
+    "passives": [
+      {
+        "id": "doqxy4t",
+        "name": "PRICE OF MAGIC",
+        "description": "[orange]Dark Magic[/orange] accumulates with every hit on an enemy. If [orange]Dark Magic[/orange] peaks for too long, Doctor Strange will be cursed with [blue]Anti-Heal[/blue].",
+        "hotkey": "PASSIVE",
+        "isPassive": true,
+        "icon": "/icons/doctor-strange/price-of-magic.png",
+        "iconScale": 0.8
+      }
+    ],
+    "ultimate": {
+      "id": "09xies5",
+      "name": "EYE OF AGAMOTTO",
+      "description": "Separate nearby enemies' [green]Souls[/green] from their bodies. Damage dealt to these [green]Souls[/green] is transferred to their physical bodies.",
+      "hotkey": "Q",
+      "hotkeyConsole": "L3+R3",
+      "icon": "/icons/doctor-strange/eye-of-agamotto.png"
+    },
+    "additionalPages": [],
+    "teamUpAnchor": {
+      "enabled": false,
+      "bonusText": ""
+    }
+  },
+  "displaySettings": {
+    "showRoleBadge": false,
+    "controlScheme": "PC",
+    "showBackground": true,
+    "customBackground": "/backgrounds/marvel-rivals-main-menu-screen.png",
+    "foldSettings": {
+      "startY": 31,
+      "endX": 72,
+      "thickness": 10,
+      "brightness": 1.3
+    },
+    "useImageBanner": true,
+    "imageBannerSettings": {
+      "foldOffsetX": 8,
+      "foldOffsetY": -15,
+      "bannerOffsetX": -5,
+      "foldRotation": 0.5
+    },
+    "showUltimateLightning": false,
+    "contentOffsetY": 25,
+    "abilitySpacing": 16
+  }
+}

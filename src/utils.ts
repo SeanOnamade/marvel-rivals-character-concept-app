@@ -50,6 +50,12 @@ export const exportToPNG = async (element: HTMLElement, filename: string): Promi
             (el as HTMLElement).style.visibility = 'hidden';
         });
 
+        // Show elements with 'export-only' class (like watermark)
+        const exportOnlyElements = element.querySelectorAll('.export-only');
+        exportOnlyElements.forEach((el) => {
+            (el as HTMLElement).style.opacity = '1';
+        });
+
         // Wait for layout to update
         await new Promise(resolve => requestAnimationFrame(() => setTimeout(resolve, 50)));
 
@@ -67,6 +73,11 @@ export const exportToPNG = async (element: HTMLElement, filename: string): Promi
         // Restore visibility
         noExportElements.forEach((el) => {
             (el as HTMLElement).style.visibility = '';
+        });
+
+        // Hide export-only elements again
+        exportOnlyElements.forEach((el) => {
+            (el as HTMLElement).style.opacity = '0';
         });
 
         // Download the file
@@ -97,6 +108,12 @@ export const openInNewTab = async (element: HTMLElement, filename: string): Prom
             (el as HTMLElement).style.visibility = 'hidden';
         });
 
+        // Show elements with 'export-only' class (like watermark)
+        const exportOnlyElements = element.querySelectorAll('.export-only');
+        exportOnlyElements.forEach((el) => {
+            (el as HTMLElement).style.opacity = '1';
+        });
+
         // Wait for layout to update
         await new Promise(resolve => requestAnimationFrame(() => setTimeout(resolve, 50)));
 
@@ -114,6 +131,11 @@ export const openInNewTab = async (element: HTMLElement, filename: string): Prom
         // Restore visibility
         noExportElements.forEach((el) => {
             (el as HTMLElement).style.visibility = '';
+        });
+
+        // Hide export-only elements again
+        exportOnlyElements.forEach((el) => {
+            (el as HTMLElement).style.opacity = '0';
         });
 
         // Open in new tab
@@ -249,10 +271,84 @@ export const parseColoredText = (text: string): TextSegment[] => {
 // Template version for schema migrations
 const TEMPLATE_VERSION = 1;
 
+// Thumbnail dimensions for template previews (320x180 maintains 16:9 aspect ratio)
+const THUMBNAIL_WIDTH = 320;
+
+/**
+ * Capture a thumbnail of the renderer element
+ */
+const captureThumbnail = async (element: HTMLElement): Promise<string | undefined> => {
+    try {
+        // Find the scale wrapper and temporarily remove scaling
+        const scaleWrapper = element.parentElement;
+        let originalTransform = '';
+        
+        if (scaleWrapper) {
+            originalTransform = scaleWrapper.style.transform;
+            scaleWrapper.style.transform = 'none';
+        }
+
+        // Hide no-export elements
+        const noExportElements = element.querySelectorAll('.no-export');
+        noExportElements.forEach((el) => {
+            (el as HTMLElement).style.visibility = 'hidden';
+        });
+
+        // Show elements with 'export-only' class (like watermark)
+        const exportOnlyElements = element.querySelectorAll('.export-only');
+        exportOnlyElements.forEach((el) => {
+            (el as HTMLElement).style.opacity = '1';
+        });
+
+        // Wait for layout
+        await new Promise(resolve => requestAnimationFrame(() => setTimeout(resolve, 50)));
+
+        // Calculate scale to fit thumbnail dimensions
+        // Original is 1280x720, we want 320x180 (same aspect ratio)
+        const scale = THUMBNAIL_WIDTH / 1280;
+
+        const dataUrl = await domToPng(element, {
+            scale: scale,
+            backgroundColor: '#0a0a0a',
+        });
+
+        // Restore transform
+        if (scaleWrapper) {
+            scaleWrapper.style.transform = originalTransform;
+        }
+
+        // Restore visibility
+        noExportElements.forEach((el) => {
+            (el as HTMLElement).style.visibility = '';
+        });
+
+        // Hide export-only elements again
+        exportOnlyElements.forEach((el) => {
+            (el as HTMLElement).style.opacity = '0';
+        });
+
+        return dataUrl;
+    } catch (error) {
+        console.error('Error capturing thumbnail:', error);
+        return undefined;
+    }
+};
+
 /**
  * Export the current hero configuration as a downloadable JSON file
+ * If rendererElement is provided, captures a thumbnail preview
  */
-export const downloadTemplate = (heroData: HeroData, displaySettings: DisplaySettings): void => {
+export const downloadTemplate = async (
+    heroData: HeroData, 
+    displaySettings: DisplaySettings,
+    rendererElement?: HTMLElement | null
+): Promise<void> => {
+    // Capture thumbnail if renderer is available
+    let thumbnail: string | undefined;
+    if (rendererElement) {
+        thumbnail = await captureThumbnail(rendererElement);
+    }
+
     const template: HeroTemplate = {
         version: TEMPLATE_VERSION,
         name: heroData.name || 'Untitled Hero',
@@ -270,6 +366,7 @@ export const downloadTemplate = (heroData: HeroData, displaySettings: DisplaySet
             contentOffsetY: displaySettings.contentOffsetY,
             abilitySpacing: displaySettings.abilitySpacing,
         },
+        thumbnail,
     };
 
     const json = JSON.stringify(template, null, 2);

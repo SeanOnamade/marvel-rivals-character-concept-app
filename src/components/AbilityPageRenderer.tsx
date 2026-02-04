@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { HeroData, DisplaySettings, ContentPage } from '../types';
 import HeroPortrait from './HeroPortrait';
 import DifficultyStars from './DifficultyStars';
@@ -308,6 +308,43 @@ const AbilityPageRenderer = React.forwardRef<HTMLDivElement, AbilityPageRenderer
         const isPC = displaySettings.controlScheme === 'PC';
         const currentPage = displaySettings.currentPage || 0;
 
+        // Track image loading state
+        const [isImageLoading, setIsImageLoading] = useState(false);
+        const previousImageRef = useRef<string | undefined>(heroData.portraitImage);
+        const loadingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+        // Detect when portrait image changes and show loading overlay
+        useEffect(() => {
+            const currentImage = heroData.portraitImage;
+            const previousImage = previousImageRef.current;
+
+            // Only show loading if switching between different images (not initial load or clearing)
+            if (currentImage && previousImage && currentImage !== previousImage) {
+                setIsImageLoading(true);
+
+                // Preload the new image
+                const img = new Image();
+                img.onload = () => {
+                    // Small delay to ensure smooth transition
+                    loadingTimeoutRef.current = setTimeout(() => {
+                        setIsImageLoading(false);
+                    }, 100);
+                };
+                img.onerror = () => {
+                    setIsImageLoading(false);
+                };
+                img.src = currentImage;
+            }
+
+            previousImageRef.current = currentImage;
+
+            return () => {
+                if (loadingTimeoutRef.current) {
+                    clearTimeout(loadingTimeoutRef.current);
+                }
+            };
+        }, [heroData.portraitImage]);
+
         const getHotkey = (pcKey: string, consoleKey?: string) => {
             return isPC ? pcKey : (consoleKey || pcKey);
         };
@@ -586,6 +623,13 @@ const AbilityPageRenderer = React.forwardRef<HTMLDivElement, AbilityPageRenderer
                     <div 
                         className="absolute inset-0 z-0 bg-black/40"
                     />
+                )}
+
+                {/* Loading overlay - shown when switching between presets/templates */}
+                {isImageLoading && (
+                    <div className="no-export absolute inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center transition-opacity">
+                        <div className="w-8 h-8 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                    </div>
                 )}
 
                 {/* Banner - conditionally image-based or CSS-based */}
@@ -882,6 +926,19 @@ const AbilityPageRenderer = React.forwardRef<HTMLDivElement, AbilityPageRenderer
                             renderAdditionalPage(heroData.additionalPages[currentPage - 1])
                         )}
                     </div>
+                </div>
+
+                {/* Watermark - only visible in exported images */}
+                <div 
+                    className="export-only absolute bottom-3 left-4 z-50"
+                    style={{ 
+                        fontFamily: 'system-ui, sans-serif',
+                        opacity: 0,
+                    }}
+                >
+                    <span className="text-white/40 text-sm tracking-wide">
+                        marvelrivalsconcepts.vercel.app
+                    </span>
                 </div>
             </div>
         );

@@ -212,6 +212,7 @@ function App() {
                         displaySettings={displaySettings}
                         onDisplaySettingsChange={setDisplaySettings}
                         onBatchChange={setBoth}
+                        rendererRef={rendererRef}
                     />
                 </div>
 

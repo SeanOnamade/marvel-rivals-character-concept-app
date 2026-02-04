@@ -9,6 +9,7 @@ export interface HeroTemplate {
     exportedAt: string;        // ISO date string
     heroData: HeroData;        // Full hero configuration
     displaySettings: Partial<DisplaySettings>;  // Display preferences
+    thumbnail?: string;        // Optional base64 preview image
 }
 
 export interface Ability {
