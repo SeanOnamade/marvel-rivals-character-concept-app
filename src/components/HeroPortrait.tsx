@@ -50,42 +50,39 @@ const HeroPortrait: React.FC<HeroPortraitProps> = ({ imageUrl, onImageUpload, cr
     // Crop with proper scaling and positioning
     const hasCrop = crop && (crop.top > 0 || crop.left > 0 || crop.right > 0 || crop.bottom > 0);
     
-    let imageStyle: React.CSSProperties = {
-        maxHeight: '100%',
-    };
-
+    // Calculate crop wrapper styles (used when hasCrop is true)
+    let cropWrapperStyle: React.CSSProperties | undefined;
+    let croppedImageStyle: React.CSSProperties | undefined;
+    
     if (hasCrop && crop) {
-        // Calculate the visible portion as a percentage
+        // Calculate the visible portion as a percentage of the original image
         const visibleWidth = 100 - crop.left - crop.right;
         const visibleHeight = 100 - crop.top - crop.bottom;
         
-        // Calculate scale to fill the container
-        // We need to scale up by 100/visiblePercent
-        const scaleX = 100 / visibleWidth;
-        const scaleY = 100 / visibleHeight;
+        // Scale factor to make the visible region fill the container
+        const scale = Math.max(100 / visibleWidth, 100 / visibleHeight);
         
-        // Use the larger scale to ensure the cropped area fills the container
-        const scale = Math.max(scaleX, scaleY);
-        
-        // Calculate the offset to center the visible portion
-        // The crop removes crop.left% from left and crop.right% from right
-        // After scaling, we need to shift the image so the visible center aligns with container center
-        const centerX = crop.left + visibleWidth / 2; // Center of visible area as % of original
+        // Center of the visible region as percentage of original image
+        const centerX = crop.left + visibleWidth / 2;
         const centerY = crop.top + visibleHeight / 2;
         
-        // Offset needed: (50 - center) * scale
-        // This shifts the image so the visible center is at 50%
-        const offsetX = (50 - centerX) * scale;
-        const offsetY = (50 - centerY) * scale;
+        // Position a scaled wrapper so the visible region is centered in the container
+        // Wrapper is scale * 100% of the container
+        // Visible center in wrapper coords: centerX% of wrapper width = centerX * scale % of container
+        // We want this at 50% of container, so wrapper left = 50 - centerX * scale
+        cropWrapperStyle = {
+            position: 'absolute',
+            width: `${scale * 100}%`,
+            height: `${scale * 100}%`,
+            left: `${50 - centerX * scale}%`,
+            top: `${50 - centerY * scale}%`,
+        };
         
-        imageStyle = {
+        croppedImageStyle = {
             width: '100%',
             height: '100%',
             objectFit: 'contain',
             objectPosition: 'center',
-            transform: `scale(${scale}) translate(${offsetX / scale}%, ${offsetY / scale}%)`,
-            transformOrigin: 'center center',
-            clipPath: `inset(${crop.top}% ${crop.right}% ${crop.bottom}% ${crop.left}%)`,
         };
     }
 
@@ -113,12 +110,23 @@ const HeroPortrait: React.FC<HeroPortraitProps> = ({ imageUrl, onImageUpload, cr
                 } : undefined}
             >
                 {imageUrl && (
-                    <img 
-                        src={imageUrl} 
-                        alt="Hero Portrait" 
-                        className="w-full h-full object-contain object-bottom"
-                        style={imageStyle}
-                    />
+                    hasCrop && cropWrapperStyle && croppedImageStyle ? (
+                        // Cropped image: use a positioned wrapper
+                        <div style={cropWrapperStyle}>
+                            <img 
+                                src={imageUrl} 
+                                alt="Hero Portrait" 
+                                style={croppedImageStyle}
+                            />
+                        </div>
+                    ) : (
+                        // Non-cropped image: simple display
+                        <img 
+                            src={imageUrl} 
+                            alt="Hero Portrait" 
+                            className="w-full h-full object-contain object-bottom"
+                        />
+                    )
                 )}
             </div>
 

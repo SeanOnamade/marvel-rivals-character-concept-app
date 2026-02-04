@@ -108,17 +108,23 @@ const ImageCropEditor: React.FC<ImageCropEditorProps> = ({
                     <p className="text-sm text-gray-400">Drag the handles to crop</p>
                 </div>
 
-                {/* Image container - smaller height */}
+                {/* Centering wrapper for the image container */}
+                <div className="flex justify-center">
+                {/* Image container - sized to match image dimensions exactly */}
+                {/* This ensures crop percentages are relative to the image, not a fixed container */}
                 <div 
                     ref={containerRef}
-                    className="relative w-full bg-black rounded overflow-hidden"
-                    style={{ aspectRatio: '3/4', maxHeight: '50vh' }}
+                    className="relative bg-black rounded overflow-hidden mx-auto inline-block"
+                    style={{ 
+                        maxHeight: '50vh',
+                        maxWidth: '100%',
+                    }}
                 >
-                    {/* Original image */}
+                    {/* Image determines container size - no letterboxing */}
                     <img 
                         src={imageUrl} 
                         alt="Crop preview" 
-                        className="w-full h-full object-contain"
+                        className="block max-w-full max-h-[50vh] w-auto h-auto"
                     />
 
                     {/* Darkened overlay for cropped areas */}
@@ -221,6 +227,7 @@ const ImageCropEditor: React.FC<ImageCropEditorProps> = ({
                         style={{ bottom: `${crop.bottom}%`, right: `${crop.right}%`, top: 'auto', left: 'auto', transform: 'translate(50%, 50%)', cursor: 'nwse-resize' }}
                         onMouseDown={(e) => handleMouseDown('bottom-right', e)}
                     />
+                </div>
                 </div>
 
                 {/* Crop values display */}
