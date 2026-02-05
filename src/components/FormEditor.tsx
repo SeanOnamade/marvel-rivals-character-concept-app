@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { HeroData, Role, Attack, Ability, TeamUpAbility, DisplaySettings, ContentPage, CropBounds, createDefaultAttack, createDefaultAbility, createDefaultTeamUp, createDefaultPassive, createDefaultContentPage, getDefaultPortraitSettings, getDefaultHeroInfoSettings, getDefaultCropBounds, getDefaultHeroData, getDefaultFoldSettings, getDefaultDisplaySettings, HERO_PRESETS, HERO_ICONS, CONSOLE_BUTTON_OPTIONS, CONSOLE_ATTACK_OPTIONS } from '../types';
 import { downloadTemplate, loadTemplateFromFile } from '../utils';
-import { Plus, Trash2, Upload, Monitor, Gamepad2, ChevronDown, ChevronUp, ChevronRight, Move, Type, Crop, GripVertical, Download, FolderOpen } from 'lucide-react';
+import { Plus, Trash2, Upload, Monitor, Gamepad2, ChevronDown, ChevronUp, ChevronRight, Move, Type, Crop, GripVertical, Download, FolderOpen, Wand2, Loader2 } from 'lucide-react';
+import { removeBackground } from '@imgly/background-removal';
 import ImageCropEditor from './ImageCropEditor';
 import CollapsibleSection from './CollapsibleSection';
 
@@ -198,6 +199,86 @@ const FormEditor: React.FC<FormEditorProps> = ({ heroData, onChange, displaySett
     const [showSuccessToast, setShowSuccessToast] = useState(false);
     const [isDownloading, setIsDownloading] = useState(false);
     const [showNoPreviewWarning, setShowNoPreviewWarning] = useState(false);
+    const [isRemovingBackground, setIsRemovingBackground] = useState(false);
+    const [bgRemovalError, setBgRemovalError] = useState<string | null>(null);
+    const [isRemovingLogoBg, setIsRemovingLogoBg] = useState(false);
+    const [logoBgRemovalError, setLogoBgRemovalError] = useState<string | null>(null);
+
+    // Background removal handler for portrait
+    const handleRemoveBackground = async () => {
+        if (!heroData.portraitImage) return;
+        
+        setIsRemovingBackground(true);
+        setBgRemovalError(null);
+        
+        try {
+            // Convert data URL to blob for processing
+            const response = await fetch(heroData.portraitImage);
+            const blob = await response.blob();
+            
+            // Remove background
+            const resultBlob = await removeBackground(blob, {
+                progress: (key, current, total) => {
+                    console.log(`Background removal: ${key} ${current}/${total}`);
+                }
+            });
+            
+            // Convert result back to data URL
+            const reader = new FileReader();
+            reader.onload = () => {
+                const dataUrl = reader.result as string;
+                updateField('portraitImage', dataUrl);
+                setIsRemovingBackground(false);
+            };
+            reader.onerror = () => {
+                setBgRemovalError('Failed to process the image');
+                setIsRemovingBackground(false);
+            };
+            reader.readAsDataURL(resultBlob);
+        } catch (error) {
+            console.error('Background removal error:', error);
+            setBgRemovalError('Background removal failed. Try a different image.');
+            setIsRemovingBackground(false);
+        }
+    };
+
+    // Background removal handler for logo
+    const handleRemoveLogoBg = async () => {
+        if (!heroData.heroLogo) return;
+        
+        setIsRemovingLogoBg(true);
+        setLogoBgRemovalError(null);
+        
+        try {
+            // Convert data URL to blob for processing
+            const response = await fetch(heroData.heroLogo);
+            const blob = await response.blob();
+            
+            // Remove background
+            const resultBlob = await removeBackground(blob, {
+                progress: (key, current, total) => {
+                    console.log(`Logo background removal: ${key} ${current}/${total}`);
+                }
+            });
+            
+            // Convert result back to data URL
+            const reader = new FileReader();
+            reader.onload = () => {
+                const dataUrl = reader.result as string;
+                updateField('heroLogo', dataUrl);
+                setIsRemovingLogoBg(false);
+            };
+            reader.onerror = () => {
+                setLogoBgRemovalError('Failed to process the image');
+                setIsRemovingLogoBg(false);
+            };
+            reader.readAsDataURL(resultBlob);
+        } catch (error) {
+            console.error('Logo background removal error:', error);
+            setLogoBgRemovalError('Background removal failed. Try a different image.');
+            setIsRemovingLogoBg(false);
+        }
+    };
 
     const handleLoadTemplate = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -1143,15 +1224,37 @@ const FormEditor: React.FC<FormEditorProps> = ({ heroData, onChange, displaySett
                                 />
                             </label>
                             {heroData.heroLogo && (
-                                <button
-                                    onClick={() => updateField('heroLogo', undefined)}
-                                    className="text-xs text-red-400 hover:text-red-300"
-                                >
-                                    Remove logo
-                                </button>
+                                <>
+                                    <button
+                                        onClick={handleRemoveLogoBg}
+                                        disabled={isRemovingLogoBg}
+                                        className="flex items-center gap-1 px-2 py-1 bg-purple-600 text-white rounded text-xs hover:bg-purple-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        {isRemovingLogoBg ? (
+                                            <>
+                                                <Loader2 className="w-3 h-3 animate-spin" />
+                                                Processing...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Wand2 className="w-3 h-3" />
+                                                Remove BG
+                                            </>
+                                        )}
+                                    </button>
+                                    <button
+                                        onClick={() => updateField('heroLogo', undefined)}
+                                        className="text-xs text-red-400 hover:text-red-300"
+                                    >
+                                        Remove logo
+                                    </button>
+                                </>
                             )}
                         </div>
                     </div>
+                    {logoBgRemovalError && (
+                        <p className="text-xs text-red-400 mt-1">{logoBgRemovalError}</p>
+                    )}
                     <p className="text-xs text-gray-500 mt-1">Appears behind hero in top-left of banner</p>
                     
                     {/* Logo Position Controls - Collapsible */}
@@ -1333,6 +1436,28 @@ const FormEditor: React.FC<FormEditorProps> = ({ heroData, onChange, displaySett
                                     <Crop className="w-4 h-4" />
                                     Open Crop Editor
                                 </button>
+                                
+                                {/* Remove Background Button */}
+                                <button
+                                    onClick={handleRemoveBackground}
+                                    disabled={isRemovingBackground}
+                                    className="flex items-center justify-center gap-2 w-full px-3 py-2 bg-purple-600 text-white rounded hover:bg-purple-500 transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    {isRemovingBackground ? (
+                                        <>
+                                            <Loader2 className="w-4 h-4 animate-spin" />
+                                            Removing Background...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Wand2 className="w-4 h-4" />
+                                            Remove Background
+                                        </>
+                                    )}
+                                </button>
+                                {bgRemovalError && (
+                                    <p className="text-xs text-red-400">{bgRemovalError}</p>
+                                )}
                                 
                                 {heroData.portraitSettings?.crop && (
                                     heroData.portraitSettings.crop.top > 0 || 
