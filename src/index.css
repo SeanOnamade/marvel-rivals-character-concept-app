@@ -175,13 +175,33 @@
   -webkit-overflow-scrolling: touch;
 }
 
-/* On mobile, set container height to match scaled preview */
+/* On mobile, allow horizontal scroll and pinch-to-zoom for preview */
 @media (max-width: 767px) {
   .preview-container-mobile {
-    /* Height = 720px * scale factor + some padding */
-    height: calc(720px * var(--preview-scale) + 16px);
-    overflow: hidden;
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
+    /* Enable pinch-to-zoom */
+    touch-action: pan-x pan-y pinch-zoom;
   }
+  
+  .preview-scaler {
+    /* Allow the scaled content to be zoomable */
+    touch-action: pinch-zoom pan-x pan-y;
+  }
+}
+
+/* Hide native disclosure triangle on details/summary */
+details > summary {
+  list-style: none;
+}
+
+details > summary::-webkit-details-marker {
+  display: none;
+}
+
+details > summary::marker {
+  display: none;
+  content: '';
 }
 
 /* Preview scaler - origin changes based on viewport */

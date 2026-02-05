@@ -878,11 +878,12 @@ const FormEditor: React.FC<FormEditorProps> = ({ heroData, onChange, displaySett
                             </div>
                             
                             {/* Background Gallery */}
-                            <details className="mt-3">
-                                <summary className="text-xs text-marvel-yellow font-bold cursor-pointer hover:text-marvel-accent">
+                            <details className="mt-3 group">
+                                <summary className="text-xs text-marvel-yellow font-bold cursor-pointer hover:text-marvel-accent flex items-center gap-2">
+                                    <ChevronRight className="w-3 h-3 transition-transform group-open:rotate-90" />
                                     Choose from gallery
                                 </summary>
-                                <div className="grid grid-cols-3 gap-2 max-h-48 overflow-y-auto p-1 mt-2">
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 max-h-64 sm:max-h-48 overflow-y-auto p-1 mt-2">
                                     {[
                                         '/backgrounds/img_gallery_card_horizontal_01.png',
                                         '/backgrounds/img_gallery_card_horizontal_02.png',
@@ -934,6 +935,7 @@ const FormEditor: React.FC<FormEditorProps> = ({ heroData, onChange, displaySett
                                             <img 
                                                 src={bg} 
                                                 alt="" 
+                                                loading="lazy"
                                                 className="w-full h-full object-cover"
                                             />
                                         </button>
@@ -1153,8 +1155,9 @@ const FormEditor: React.FC<FormEditorProps> = ({ heroData, onChange, displaySett
                     
                     {/* Logo Position Controls - Collapsible */}
                     {heroData.heroLogo && (
-                        <details className="mt-3">
-                            <summary className="text-xs text-marvel-yellow font-bold cursor-pointer hover:text-marvel-accent p-2 bg-marvel-dark rounded border border-marvel-border">
+                        <details className="mt-3 group">
+                            <summary className="text-xs text-marvel-yellow font-bold cursor-pointer hover:text-marvel-accent p-2 bg-marvel-dark rounded border border-marvel-border flex items-center gap-2">
+                                <ChevronRight className="w-3 h-3 transition-transform group-open:rotate-90" />
                                 Logo Position
                             </summary>
                             <div className="space-y-3 p-3 bg-marvel-dark rounded-b border border-t-0 border-marvel-border">

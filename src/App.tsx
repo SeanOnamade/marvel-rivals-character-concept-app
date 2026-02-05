@@ -55,40 +55,13 @@ function App() {
     const [showPreview, setShowPreview] = useState(true);
     const [isExporting, setIsExporting] = useState(false);
     const [isOpeningTab, setIsOpeningTab] = useState(false);
-    const [showScrollToPreview, setShowScrollToPreview] = useState(false);
+    const [mobileTab, setMobileTab] = useState<'preview' | 'editor'>('preview');
     const rendererRef = useRef<HTMLDivElement>(null);
-    const previewRef = useRef<HTMLDivElement>(null);
 
     // Preload preset images on app mount
     useEffect(() => {
         preloadPresetImages();
     }, []);
-
-    // Track scroll position to show/hide floating button on mobile
-    useEffect(() => {
-        const handleScroll = () => {
-            // Only show button on mobile (< 768px)
-            if (window.innerWidth >= 768) {
-                setShowScrollToPreview(false);
-                return;
-            }
-            // Show button when user has scrolled past the preview
-            const scrollY = window.scrollY;
-            const previewHeight = previewRef.current?.offsetHeight || 400;
-            setShowScrollToPreview(scrollY > previewHeight + 100);
-        };
-
-        window.addEventListener('scroll', handleScroll);
-        window.addEventListener('resize', handleScroll);
-        return () => {
-            window.removeEventListener('scroll', handleScroll);
-            window.removeEventListener('resize', handleScroll);
-        };
-    }, []);
-
-    const scrollToPreview = () => {
-        previewRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    };
 
     // Keyboard shortcuts for undo/redo
     const handleKeyDown = useCallback((e: KeyboardEvent) => {
@@ -238,10 +211,38 @@ function App() {
                 </div>
             </header>
 
+            {/* Mobile Tab Switcher */}
+            <div className="md:hidden flex border-b border-marvel-border bg-marvel-metal">
+                <button
+                    onClick={() => setMobileTab('preview')}
+                    className={`flex-1 py-3 text-center font-bold uppercase tracking-wider transition-colors ${
+                        mobileTab === 'preview' 
+                            ? 'text-marvel-yellow border-b-2 border-marvel-yellow bg-marvel-dark' 
+                            : 'text-gray-400 hover:text-white'
+                    }`}
+                >
+                    <Eye size={18} className="inline mr-2" />
+                    Preview
+                </button>
+                <button
+                    onClick={() => setMobileTab('editor')}
+                    className={`flex-1 py-3 text-center font-bold uppercase tracking-wider transition-colors ${
+                        mobileTab === 'editor' 
+                            ? 'text-marvel-yellow border-b-2 border-marvel-yellow bg-marvel-dark' 
+                            : 'text-gray-400 hover:text-white'
+                    }`}
+                >
+                    <ChevronUp size={18} className="inline mr-2 rotate-90" />
+                    Editor
+                </button>
+            </div>
+
             {/* Main Content */}
             <div className="flex flex-col md:flex-row md:h-[calc(100vh-88px)]">
-                {/* Editor Panel - Below on mobile, left on desktop */}
-                <div className="w-full md:w-1/3 order-2 md:order-1 border-t md:border-t-0 md:border-r border-marvel-border overflow-hidden">
+                {/* Editor Panel - Hidden on mobile unless tab selected, always visible on desktop */}
+                <div className={`w-full md:w-1/3 md:border-r border-marvel-border overflow-hidden h-[calc(100vh-140px)] md:h-auto ${
+                    mobileTab === 'editor' ? 'block' : 'hidden md:block'
+                }`}>
                     <FormEditor 
                         heroData={heroData} 
                         onChange={setHeroData}
@@ -252,9 +253,11 @@ function App() {
                     />
                 </div>
 
-                {/* Preview Panel - Above on mobile, right on desktop */}
+                {/* Preview Panel - Hidden on mobile unless tab selected, always visible on desktop */}
                 {showPreview && (
-                    <div ref={previewRef} className="w-full md:flex-1 order-1 md:order-2 overflow-auto p-2 md:p-4 flex items-start justify-center relative">
+                    <div className={`w-full md:flex-1 overflow-auto p-2 md:p-4 flex items-start justify-center relative ${
+                        mobileTab === 'preview' ? 'block' : 'hidden md:flex'
+                    }`}>
                         {/* Export/Preview Loading Overlay */}
                         {(isExporting || isOpeningTab) && (
                             <div className="absolute inset-0 z-50 flex items-center justify-center bg-marvel-dark/90 backdrop-blur-sm">
@@ -294,18 +297,6 @@ function App() {
                     </div>
                 )}
             </div>
-
-            {/* Floating "View Preview" button - mobile only */}
-            {showScrollToPreview && (
-                <button
-                    onClick={scrollToPreview}
-                    className="md:hidden fixed bottom-6 right-6 z-40 bg-marvel-yellow text-black p-4 rounded-full shadow-lg hover:bg-marvel-accent active:scale-95 transition-all flex items-center gap-2"
-                    aria-label="Scroll to preview"
-                >
-                    <ChevronUp size={24} />
-                    <Eye size={20} />
-                </button>
-            )}
         </div>
     );
 }
