@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { ExternalLink, Loader2, Undo2, Redo2, Eye, ChevronUp } from 'lucide-react';
+import { ExternalLink, Loader2, Undo2, Redo2, Eye, ChevronUp, ZoomIn, ZoomOut, Columns } from 'lucide-react';
 import { getDefaultHeroData, getDefaultDisplaySettings, HeroData, DisplaySettings } from './types';
 import { openInNewTab, preloadPresetImages } from './utils';
 import { useHistory } from './hooks/useHistory';
@@ -55,9 +55,23 @@ function App() {
     const [showPreview, setShowPreview] = useState(true);
     const [isExporting, setIsExporting] = useState(false);
     const [isOpeningTab, setIsOpeningTab] = useState(false);
-    const [mobileTab, setMobileTab] = useState<'preview' | 'editor'>('preview');
+    const [mobileTab, setMobileTab] = useState<'preview' | 'editor' | 'both'>('both');
     const [previewScale, setPreviewScale] = useState(75); // Default 75%
     const rendererRef = useRef<HTMLDivElement>(null);
+    
+    // "Both" mode pinned preview - pinch/zoom/pan state
+    const [pinnedScale, setPinnedScale] = useState(0.32); // Default 32%
+    const [pinnedPan, setPinnedPan] = useState({ x: 0, y: 0 });
+    const pinnedPreviewRef = useRef<HTMLDivElement>(null);
+    const pinchStateRef = useRef<{
+        initialDistance: number;
+        initialScale: number;
+        initialPan: { x: number; y: number };
+        lastTouchX: number;
+        lastTouchY: number;
+        isPinching: boolean;
+        isDragging: boolean;
+    } | null>(null);
 
     // Preload preset images on app mount
     useEffect(() => {
@@ -82,6 +96,75 @@ function App() {
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [handleKeyDown]);
+
+    // Pinned preview touch handlers for pinch-zoom and pan
+    const getDistance = (touches: TouchList) => {
+        const dx = touches[0].clientX - touches[1].clientX;
+        const dy = touches[0].clientY - touches[1].clientY;
+        return Math.sqrt(dx * dx + dy * dy);
+    };
+
+    const handlePinnedTouchStart = useCallback((e: React.TouchEvent) => {
+        if (e.touches.length === 2) {
+            // Pinch start
+            e.preventDefault();
+            pinchStateRef.current = {
+                initialDistance: getDistance(e.touches),
+                initialScale: pinnedScale,
+                initialPan: { ...pinnedPan },
+                lastTouchX: (e.touches[0].clientX + e.touches[1].clientX) / 2,
+                lastTouchY: (e.touches[0].clientY + e.touches[1].clientY) / 2,
+                isPinching: true,
+                isDragging: false,
+            };
+        } else if (e.touches.length === 1) {
+            // Drag start
+            pinchStateRef.current = {
+                initialDistance: 0,
+                initialScale: pinnedScale,
+                initialPan: { ...pinnedPan },
+                lastTouchX: e.touches[0].clientX,
+                lastTouchY: e.touches[0].clientY,
+                isPinching: false,
+                isDragging: true,
+            };
+        }
+    }, [pinnedScale, pinnedPan]);
+
+    const handlePinnedTouchMove = useCallback((e: React.TouchEvent) => {
+        if (!pinchStateRef.current) return;
+
+        if (e.touches.length === 2 && pinchStateRef.current.isPinching) {
+            // Pinch zoom
+            e.preventDefault();
+            const currentDistance = getDistance(e.touches);
+            const scaleRatio = currentDistance / pinchStateRef.current.initialDistance;
+            const newScale = Math.min(1.5, Math.max(0.15, pinchStateRef.current.initialScale * scaleRatio));
+            setPinnedScale(newScale);
+        } else if (e.touches.length === 1 && pinchStateRef.current.isDragging) {
+            // Pan/drag
+            const deltaX = e.touches[0].clientX - pinchStateRef.current.lastTouchX;
+            const deltaY = e.touches[0].clientY - pinchStateRef.current.lastTouchY;
+            setPinnedPan(prev => ({
+                x: prev.x + deltaX,
+                y: prev.y + deltaY,
+            }));
+            pinchStateRef.current.lastTouchX = e.touches[0].clientX;
+            pinchStateRef.current.lastTouchY = e.touches[0].clientY;
+        }
+    }, []);
+
+    const handlePinnedTouchEnd = useCallback(() => {
+        pinchStateRef.current = null;
+    }, []);
+
+    // Reset pinned preview position when switching to "both" tab
+    useEffect(() => {
+        if (mobileTab === 'both') {
+            setPinnedPan({ x: 0, y: 0 });
+            setPinnedScale(0.32);
+        }
+    }, [mobileTab]);
 
     const handleOpenInNewTab = async () => {
         if (!rendererRef.current) return;
@@ -210,24 +293,35 @@ function App() {
             <div className="md:hidden flex border-b border-marvel-border bg-marvel-metal">
                 <button
                     onClick={() => setMobileTab('preview')}
-                    className={`flex-1 py-3 text-center font-bold uppercase tracking-wider transition-colors ${
+                    className={`flex-1 py-2 text-center font-bold uppercase tracking-wider transition-colors text-sm ${
                         mobileTab === 'preview' 
                             ? 'text-marvel-yellow border-b-2 border-marvel-yellow bg-marvel-dark' 
                             : 'text-gray-400 hover:text-white'
                     }`}
                 >
-                    <Eye size={18} className="inline mr-2" />
+                    <Eye size={16} className="inline mr-1" />
                     Preview
                 </button>
                 <button
+                    onClick={() => setMobileTab('both')}
+                    className={`flex-1 py-2 text-center font-bold uppercase tracking-wider transition-colors text-sm ${
+                        mobileTab === 'both' 
+                            ? 'text-marvel-yellow border-b-2 border-marvel-yellow bg-marvel-dark' 
+                            : 'text-gray-400 hover:text-white'
+                    }`}
+                >
+                    <Columns size={16} className="inline mr-1" />
+                    Both
+                </button>
+                <button
                     onClick={() => setMobileTab('editor')}
-                    className={`flex-1 py-3 text-center font-bold uppercase tracking-wider transition-colors ${
+                    className={`flex-1 py-2 text-center font-bold uppercase tracking-wider transition-colors text-sm ${
                         mobileTab === 'editor' 
                             ? 'text-marvel-yellow border-b-2 border-marvel-yellow bg-marvel-dark' 
                             : 'text-gray-400 hover:text-white'
                     }`}
                 >
-                    <ChevronUp size={18} className="inline mr-2 rotate-90" />
+                    <ChevronUp size={16} className="inline mr-1 rotate-90" />
                     Editor
                 </button>
             </div>
@@ -235,8 +329,9 @@ function App() {
             {/* Main Content */}
             <div className="flex flex-col md:flex-row md:h-[calc(100vh-88px)]">
                 {/* Editor Panel - Hidden on mobile unless tab selected, always visible on desktop */}
-                <div className={`w-full md:w-1/3 md:border-r border-marvel-border overflow-hidden h-[calc(100vh-140px)] md:h-auto ${
-                    mobileTab === 'editor' ? 'block' : 'hidden md:block'
+                <div className={`w-full md:w-1/3 md:border-r border-marvel-border overflow-hidden md:h-auto ${
+                    mobileTab === 'editor' ? 'block h-[calc(100vh-140px)]' : 
+                    mobileTab === 'both' ? 'block h-[calc(100vh-140px-180px)]' : 'hidden md:block'
                 }`}>
                     <FormEditor 
                         heroData={heroData} 
@@ -252,9 +347,24 @@ function App() {
 
                 {/* Preview Panel - Hidden on mobile unless tab selected, always visible on desktop */}
                 {showPreview && (
-                    <div className={`w-full md:flex-1 overflow-x-auto overflow-y-auto p-2 md:p-4 flex items-start relative ${
-                        mobileTab === 'preview' ? 'block' : 'hidden md:flex'
-                    }`}>
+                    <div className={`w-full md:flex-1 overflow-x-auto overflow-y-auto p-2 md:p-4 flex flex-col md:flex-row items-start relative ${
+                        mobileTab === 'preview' ? 'flex' : 'hidden'
+                    } md:flex`}>
+                        {/* Mobile Zoom Slider - only shown on mobile in preview-only mode */}
+                        <div className="md:hidden w-full flex items-center gap-3 mb-3 px-2 py-2 bg-marvel-metal/50 rounded-lg border border-marvel-border">
+                            <ZoomOut size={16} className="text-gray-400 flex-shrink-0" />
+                            <input
+                                type="range"
+                                min="25"
+                                max="150"
+                                value={previewScale}
+                                onChange={(e) => setPreviewScale(Number(e.target.value))}
+                                className="flex-1 h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-marvel-yellow"
+                            />
+                            <ZoomIn size={16} className="text-gray-400 flex-shrink-0" />
+                            <span className="text-xs text-gray-400 w-10 text-right flex-shrink-0">{previewScale}%</span>
+                        </div>
+                        
                         {/* Export/Preview Loading Overlay */}
                         {(isExporting || isOpeningTab) && (
                             <div className="absolute inset-0 z-50 flex items-center justify-center bg-marvel-dark/90 backdrop-blur-sm">
@@ -280,6 +390,52 @@ function App() {
                                 className="preview-scaler"
                                 style={{ 
                                     transform: `scale(${previewScale / 100})`
+                                }}
+                            >
+                                <AbilityPageRenderer
+                                    ref={rendererRef}
+                                    heroData={heroData}
+                                    displaySettings={displaySettings}
+                                    onImageUpload={handleImageUpload}
+                                    onPageChange={handlePageChange}
+                                />
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Mobile "Both" Mode - Pinned Preview at Bottom */}
+                {mobileTab === 'both' && showPreview && (
+                    <div className="md:hidden fixed bottom-0 left-0 right-0 h-[180px] bg-marvel-dark border-t-2 border-marvel-yellow/30 z-40">
+                        {/* Export/Preview Loading Overlay for pinned preview */}
+                        {(isExporting || isOpeningTab) && (
+                            <div className="absolute inset-0 z-50 flex items-center justify-center bg-marvel-dark/90 backdrop-blur-sm">
+                                <div className="flex items-center gap-3">
+                                    <Loader2 className="animate-spin text-marvel-yellow" size={20} />
+                                    <span className="text-marvel-yellow text-sm font-bold uppercase">
+                                        {isExporting ? 'Exporting...' : 'Generating...'}
+                                    </span>
+                                </div>
+                            </div>
+                        )}
+                        {/* Zoom indicator */}
+                        <div className="absolute top-2 right-2 z-10 bg-black/60 px-2 py-1 rounded text-xs text-gray-300">
+                            {Math.round(pinnedScale * 100)}%
+                        </div>
+                        {/* Pinch/drag preview container */}
+                        <div 
+                            ref={pinnedPreviewRef}
+                            className="w-full h-full overflow-hidden flex items-center justify-center touch-none"
+                            onTouchStart={handlePinnedTouchStart}
+                            onTouchMove={handlePinnedTouchMove}
+                            onTouchEnd={handlePinnedTouchEnd}
+                            onTouchCancel={handlePinnedTouchEnd}
+                        >
+                            <div 
+                                className="origin-center flex-shrink-0"
+                                style={{ 
+                                    transform: `scale(${pinnedScale}) translate(${pinnedPan.x / pinnedScale}px, ${pinnedPan.y / pinnedScale}px)`,
+                                    transformOrigin: 'center center'
                                 }}
                             >
                                 <AbilityPageRenderer
