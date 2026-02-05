@@ -98,9 +98,9 @@ function App() {
     }, [handleKeyDown]);
 
     // Pinned preview touch handlers for pinch-zoom and pan
-    const getDistance = (touches: TouchList) => {
-        const dx = touches[0].clientX - touches[1].clientX;
-        const dy = touches[0].clientY - touches[1].clientY;
+    const getDistance = (touch1: React.Touch, touch2: React.Touch) => {
+        const dx = touch1.clientX - touch2.clientX;
+        const dy = touch1.clientY - touch2.clientY;
         return Math.sqrt(dx * dx + dy * dy);
     };
 
@@ -109,7 +109,7 @@ function App() {
             // Pinch start
             e.preventDefault();
             pinchStateRef.current = {
-                initialDistance: getDistance(e.touches),
+                initialDistance: getDistance(e.touches[0], e.touches[1]),
                 initialScale: pinnedScale,
                 initialPan: { ...pinnedPan },
                 lastTouchX: (e.touches[0].clientX + e.touches[1].clientX) / 2,
@@ -137,7 +137,7 @@ function App() {
         if (e.touches.length === 2 && pinchStateRef.current.isPinching) {
             // Pinch zoom
             e.preventDefault();
-            const currentDistance = getDistance(e.touches);
+            const currentDistance = getDistance(e.touches[0], e.touches[1]);
             const scaleRatio = currentDistance / pinchStateRef.current.initialDistance;
             const newScale = Math.min(1.5, Math.max(0.15, pinchStateRef.current.initialScale * scaleRatio));
             setPinnedScale(newScale);
