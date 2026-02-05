@@ -91,6 +91,63 @@ export const exportToPNG = async (element: HTMLElement, filename: string): Promi
     }
 };
 
+// Export element as a Blob (for Web Share API)
+export const exportToBlob = async (element: HTMLElement): Promise<Blob> => {
+    try {
+        // Find the scale wrapper (parent element with transform)
+        const scaleWrapper = element.parentElement;
+        let originalTransform = '';
+        
+        if (scaleWrapper) {
+            originalTransform = scaleWrapper.style.transform;
+            scaleWrapper.style.transform = 'none';
+        }
+
+        // Hide elements with 'no-export' class before capture
+        const noExportElements = element.querySelectorAll('.no-export');
+        noExportElements.forEach((el) => {
+            (el as HTMLElement).style.visibility = 'hidden';
+        });
+
+        // Show elements with 'export-only' class (like watermark)
+        const exportOnlyElements = element.querySelectorAll('.export-only');
+        exportOnlyElements.forEach((el) => {
+            (el as HTMLElement).style.opacity = '1';
+        });
+
+        // Wait for layout to update
+        await new Promise(resolve => requestAnimationFrame(() => setTimeout(resolve, 50)));
+
+        // Export at 3x scale for high resolution (1280x720 -> 3840x2160)
+        const dataUrl = await domToPng(element, {
+            scale: 3,
+            backgroundColor: '#0a0a0a',
+        });
+
+        // Restore transform
+        if (scaleWrapper) {
+            scaleWrapper.style.transform = originalTransform;
+        }
+
+        // Restore visibility
+        noExportElements.forEach((el) => {
+            (el as HTMLElement).style.visibility = '';
+        });
+
+        // Hide export-only elements again
+        exportOnlyElements.forEach((el) => {
+            (el as HTMLElement).style.opacity = '0';
+        });
+
+        // Convert data URL to Blob
+        const response = await fetch(dataUrl);
+        return await response.blob();
+    } catch (error) {
+        console.error('Error exporting to Blob:', error);
+        throw error;
+    }
+};
+
 export const openInNewTab = async (element: HTMLElement, filename: string): Promise<void> => {
     try {
         // Find the scale wrapper (parent element with transform)

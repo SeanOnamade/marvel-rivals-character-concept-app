@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { ExternalLink, Loader2, Undo2, Redo2 } from 'lucide-react';
+import { ExternalLink, Loader2, Undo2, Redo2, Eye, ChevronUp } from 'lucide-react';
 import { getDefaultHeroData, getDefaultDisplaySettings, HeroData, DisplaySettings } from './types';
 import { openInNewTab, preloadPresetImages } from './utils';
 import { useHistory } from './hooks/useHistory';
@@ -55,12 +55,40 @@ function App() {
     const [showPreview, setShowPreview] = useState(true);
     const [isExporting, setIsExporting] = useState(false);
     const [isOpeningTab, setIsOpeningTab] = useState(false);
+    const [showScrollToPreview, setShowScrollToPreview] = useState(false);
     const rendererRef = useRef<HTMLDivElement>(null);
+    const previewRef = useRef<HTMLDivElement>(null);
 
     // Preload preset images on app mount
     useEffect(() => {
         preloadPresetImages();
     }, []);
+
+    // Track scroll position to show/hide floating button on mobile
+    useEffect(() => {
+        const handleScroll = () => {
+            // Only show button on mobile (< 768px)
+            if (window.innerWidth >= 768) {
+                setShowScrollToPreview(false);
+                return;
+            }
+            // Show button when user has scrolled past the preview
+            const scrollY = window.scrollY;
+            const previewHeight = previewRef.current?.offsetHeight || 400;
+            setShowScrollToPreview(scrollY > previewHeight + 100);
+        };
+
+        window.addEventListener('scroll', handleScroll);
+        window.addEventListener('resize', handleScroll);
+        return () => {
+            window.removeEventListener('scroll', handleScroll);
+            window.removeEventListener('resize', handleScroll);
+        };
+    }, []);
+
+    const scrollToPreview = () => {
+        previewRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    };
 
     // Keyboard shortcuts for undo/redo
     const handleKeyDown = useCallback((e: KeyboardEvent) => {
@@ -124,34 +152,37 @@ function App() {
     return (
         <div className="min-h-screen bg-marvel-dark">
             {/* Header */}
-            <header className="bg-marvel-metal border-b-2 border-marvel-yellow/30 py-4 px-6">
-                <div className="max-w-7xl mx-auto flex items-center justify-between">
-                    <div className="flex items-center gap-4">
+            <header className="bg-marvel-metal border-b-2 border-marvel-yellow/30 py-3 px-4 md:py-4 md:px-6">
+                <div className="max-w-7xl mx-auto flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                    {/* Logo and Title */}
+                    <div className="flex items-center gap-3 md:gap-4">
                         <img 
                             src="/favicon.png" 
                             alt="Marvel Rivals" 
-                            className="w-14 h-14 object-contain"
+                            className="w-10 h-10 md:w-14 md:h-14 object-contain"
                         />
                         <div>
-                            <h1 className="text-3xl font-bold text-marvel-yellow uppercase tracking-wider">
+                            <h1 className="text-xl md:text-3xl font-bold text-marvel-yellow uppercase tracking-wider">
                                 Marvel Rivals Ability Builder
                             </h1>
-                        <p className="text-sm text-gray-400 mt-1">
-                            Create custom hero ability pages | Assets from{' '}
-                            <a 
-                                href="https://rivalskins.com/assets/" 
-                                target="_blank" 
-                                rel="noopener noreferrer"
-                                className="text-marvel-yellow/70 hover:text-marvel-yellow underline"
-                            >
-                                rivalskins.com
-                            </a>
-                        </p>
+                            <p className="text-xs md:text-sm text-gray-400 mt-0.5 md:mt-1 hidden sm:block">
+                                Create custom hero ability pages | Assets from{' '}
+                                <a 
+                                    href="https://rivalskins.com/assets/" 
+                                    target="_blank" 
+                                    rel="noopener noreferrer"
+                                    className="text-marvel-yellow/70 hover:text-marvel-yellow underline"
+                                >
+                                    rivalskins.com
+                                </a>
+                            </p>
                         </div>
                     </div>
-                    <div className="flex items-center gap-3">
+                    
+                    {/* Action Buttons */}
+                    <div className="flex items-center gap-2 md:gap-3 flex-wrap">
                         {/* Undo/Redo Buttons */}
-                        <div className="flex items-center gap-1 mr-2">
+                        <div className="flex items-center gap-1 mr-1 md:mr-2">
                             <button
                                 onClick={undo}
                                 disabled={!canUndo}
@@ -170,16 +201,19 @@ function App() {
                             </button>
                         </div>
                         
+                        {/* Hide Preview - desktop only */}
                         <button
                             onClick={() => setShowPreview(!showPreview)}
-                            className="bg-marvel-border text-white px-4 py-2 rounded hover:bg-marvel-metal transition-colors"
+                            className="hidden md:block bg-marvel-border text-white px-4 py-2 rounded hover:bg-marvel-metal transition-colors"
                         >
                             {showPreview ? 'Hide Preview' : 'Show Preview'}
                         </button>
+                        
+                        {/* Open in New Tab - desktop only */}
                         <button
                             onClick={handleOpenInNewTab}
                             disabled={isOpeningTab}
-                            className="bg-marvel-metal border border-marvel-yellow/50 text-marvel-yellow px-4 py-3 rounded-lg font-bold uppercase tracking-wider hover:bg-marvel-yellow/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                            className="hidden md:flex bg-marvel-metal border border-marvel-yellow/50 text-marvel-yellow px-4 py-3 rounded-lg font-bold uppercase tracking-wider hover:bg-marvel-yellow/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed items-center gap-2"
                         >
                             {isOpeningTab ? (
                                 <>
@@ -193,6 +227,8 @@ function App() {
                                 </>
                             )}
                         </button>
+                        
+                        {/* Export Button */}
                         <ExportButton
                             targetRef={rendererRef}
                             filename={`${heroData.name.toLowerCase().replace(/\s+/g, '-')}-ability-page.png`}
@@ -203,9 +239,9 @@ function App() {
             </header>
 
             {/* Main Content */}
-            <div className="flex h-[calc(100vh-88px)]">
-                {/* Editor Panel */}
-                <div className="w-1/3 border-r border-marvel-border overflow-hidden">
+            <div className="flex flex-col md:flex-row md:h-[calc(100vh-88px)]">
+                {/* Editor Panel - Below on mobile, left on desktop */}
+                <div className="w-full md:w-1/3 order-2 md:order-1 border-t md:border-t-0 md:border-r border-marvel-border overflow-hidden">
                     <FormEditor 
                         heroData={heroData} 
                         onChange={setHeroData}
@@ -216,9 +252,9 @@ function App() {
                     />
                 </div>
 
-                {/* Preview Panel */}
+                {/* Preview Panel - Above on mobile, right on desktop */}
                 {showPreview && (
-                    <div className="flex-1 overflow-auto p-4 flex items-start justify-center relative">
+                    <div ref={previewRef} className="w-full md:flex-1 order-1 md:order-2 overflow-auto p-2 md:p-4 flex items-start justify-center relative">
                         {/* Export/Preview Loading Overlay */}
                         {(isExporting || isOpeningTab) && (
                             <div className="absolute inset-0 z-50 flex items-center justify-center bg-marvel-dark/90 backdrop-blur-sm">
@@ -238,18 +274,38 @@ function App() {
                                 </div>
                             </div>
                         )}
-                        <div style={{ transform: 'scale(0.75)', transformOrigin: 'top center' }}>
-                            <AbilityPageRenderer
-                                ref={rendererRef}
-                                heroData={heroData}
-                                displaySettings={displaySettings}
-                                onImageUpload={handleImageUpload}
-                                onPageChange={handlePageChange}
-                            />
+                        {/* Responsive preview container */}
+                        <div className="preview-container-mobile md:w-auto md:overflow-visible">
+                            <div 
+                                className="preview-scaler"
+                                style={{ 
+                                    transform: 'scale(var(--preview-scale, 0.75))'
+                                }}
+                            >
+                                <AbilityPageRenderer
+                                    ref={rendererRef}
+                                    heroData={heroData}
+                                    displaySettings={displaySettings}
+                                    onImageUpload={handleImageUpload}
+                                    onPageChange={handlePageChange}
+                                />
+                            </div>
                         </div>
                     </div>
                 )}
             </div>
+
+            {/* Floating "View Preview" button - mobile only */}
+            {showScrollToPreview && (
+                <button
+                    onClick={scrollToPreview}
+                    className="md:hidden fixed bottom-6 right-6 z-40 bg-marvel-yellow text-black p-4 rounded-full shadow-lg hover:bg-marvel-accent active:scale-95 transition-all flex items-center gap-2"
+                    aria-label="Scroll to preview"
+                >
+                    <ChevronUp size={24} />
+                    <Eye size={20} />
+                </button>
+            )}
         </div>
     );
 }

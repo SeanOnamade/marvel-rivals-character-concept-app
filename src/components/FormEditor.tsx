@@ -3,6 +3,7 @@ import { HeroData, Role, Attack, Ability, TeamUpAbility, DisplaySettings, Conten
 import { downloadTemplate, loadTemplateFromFile } from '../utils';
 import { Plus, Trash2, Upload, Monitor, Gamepad2, ChevronDown, ChevronUp, ChevronRight, Move, Type, Crop, GripVertical, Download, FolderOpen } from 'lucide-react';
 import ImageCropEditor from './ImageCropEditor';
+import CollapsibleSection from './CollapsibleSection';
 
 interface FormEditorProps {
     heroData: HeroData;
@@ -676,9 +677,7 @@ const FormEditor: React.FC<FormEditorProps> = ({ heroData, onChange, displaySett
             </div>
 
             {/* Display Settings */}
-            <div className="mb-6 p-4 bg-marvel-dark rounded-lg border border-marvel-border">
-                <h3 className="text-lg font-semibold mb-4 text-marvel-accent">Display Settings</h3>
-
+            <CollapsibleSection title="Display Settings" defaultOpen={false} className="mb-6 bg-marvel-dark rounded-lg border border-marvel-border">
                 {/* Control Scheme Toggle */}
                 <div className="mb-4">
                     <label className="block text-sm font-medium mb-2">Control Scheme</label>
@@ -1092,12 +1091,10 @@ const FormEditor: React.FC<FormEditorProps> = ({ heroData, onChange, displaySett
                         </div>
                     )}
                 </div>
-            </div>
+            </CollapsibleSection>
 
             {/* Basic Info */}
-            <div className="mb-6">
-                <h3 className="text-lg font-semibold mb-3 text-marvel-accent">Basic Information</h3>
-
+            <CollapsibleSection title="Basic Information" defaultOpen={true} className="mb-6">
                 <div className="mb-4">
                     <label className="block text-sm font-medium mb-2">Hero Name</label>
                     <input
@@ -1242,7 +1239,7 @@ const FormEditor: React.FC<FormEditorProps> = ({ heroData, onChange, displaySett
                     />
                     <div className="text-center text-marvel-yellow font-bold">{heroData.difficulty} Stars</div>
                 </div>
-            </div>
+            </CollapsibleSection>
 
             {/* Hero Image Position - Collapsible */}
             <div className="mb-6 p-4 bg-marvel-dark rounded-lg border border-marvel-border">
@@ -1415,9 +1412,8 @@ const FormEditor: React.FC<FormEditorProps> = ({ heroData, onChange, displaySett
             </div>
 
             {/* Attacks */}
-            <div className="mb-6">
-                <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-lg font-semibold text-marvel-accent">Attacks</h3>
+            <CollapsibleSection title="Attacks" defaultOpen={true} className="mb-6">
+                <div className="flex justify-end mb-3">
                     <button onClick={addAttack} className="flex items-center gap-1 text-sm text-marvel-yellow hover:text-marvel-accent">
                         <Plus className="w-4 h-4" /> Add
                     </button>
@@ -1484,12 +1480,11 @@ const FormEditor: React.FC<FormEditorProps> = ({ heroData, onChange, displaySett
                         <ColoredTextarea value={attack.description} onChange={(val) => updateAttack(attack.id, 'description', val)} placeholder="Description" rows={2} />
                     </div>
                 ))}
-            </div>
+            </CollapsibleSection>
 
             {/* Team-Up Abilities */}
-            <div className="mb-6">
-                <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-lg font-semibold text-marvel-accent">Team-Up Abilities</h3>
+            <CollapsibleSection title="Team-Up Abilities" defaultOpen={false} className="mb-6">
+                <div className="flex justify-end mb-3">
                     <button onClick={addTeamUp} className="flex items-center gap-1 text-sm text-marvel-yellow hover:text-marvel-accent">
                         <Plus className="w-4 h-4" /> Add
                     </button>
@@ -1681,11 +1676,10 @@ const FormEditor: React.FC<FormEditorProps> = ({ heroData, onChange, displaySett
                         </details>
                     </div>
                 ))}
-            </div>
+            </CollapsibleSection>
 
             {/* Ultimate */}
-            <div className="mb-6">
-                <h3 className="text-lg font-semibold mb-3 text-marvel-accent">Ultimate (Top of Abilities)</h3>
+            <CollapsibleSection title="Ultimate (Top of Abilities)" defaultOpen={true} className="mb-6">
                 <div className="p-3 bg-marvel-dark rounded border border-marvel-yellow/30">
                     <div className="flex items-center justify-between mb-2">
                         <h4 className="text-sm font-bold text-marvel-yellow">Ultimate</h4>
@@ -1722,12 +1716,11 @@ const FormEditor: React.FC<FormEditorProps> = ({ heroData, onChange, displaySett
                     </div>
                     <ColoredTextarea value={heroData.ultimate.description} onChange={(val) => updateUltimate('description', val)} placeholder="Description" rows={3} />
                 </div>
-            </div>
+            </CollapsibleSection>
 
             {/* Abilities */}
-            <div className="mb-6">
-                <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-lg font-semibold text-marvel-accent">Abilities</h3>
+            <CollapsibleSection title="Abilities" defaultOpen={true} className="mb-6">
+                <div className="flex justify-end mb-3">
                     <button onClick={addAbility} className="flex items-center gap-1 text-sm text-marvel-yellow hover:text-marvel-accent">
                         <Plus className="w-4 h-4" /> Add
                     </button>
@@ -1793,12 +1786,11 @@ const FormEditor: React.FC<FormEditorProps> = ({ heroData, onChange, displaySett
                         <ColoredTextarea value={ability.description} onChange={(val) => updateAbility(ability.id, 'description', val)} placeholder="Description" rows={2} />
                     </div>
                 ))}
-            </div>
+            </CollapsibleSection>
 
             {/* Passives */}
-            <div className="mb-6">
-                <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-lg font-semibold text-marvel-accent">Passives (Bottom of Abilities)</h3>
+            <CollapsibleSection title="Passives (Bottom of Abilities)" defaultOpen={false} className="mb-6">
+                <div className="flex justify-end mb-3">
                     <button onClick={addPassive} className="flex items-center gap-1 text-sm text-marvel-yellow hover:text-marvel-accent">
                         <Plus className="w-4 h-4" /> Add
                     </button>
@@ -1853,11 +1845,10 @@ const FormEditor: React.FC<FormEditorProps> = ({ heroData, onChange, displaySett
                         <ColoredTextarea value={passive.description} onChange={(val) => updatePassive(passive.id, 'description', val)} placeholder="Description" rows={2} />
                     </div>
                 ))}
-            </div>
+            </CollapsibleSection>
 
             {/* Team-Up Anchor */}
-            <div className="mb-6 p-4 bg-marvel-dark rounded-lg border border-marvel-border">
-                <h3 className="text-lg font-semibold mb-3 text-marvel-accent">Team-Up Anchor</h3>
+            <CollapsibleSection title="Team-Up Anchor" defaultOpen={false} className="mb-6 bg-marvel-dark rounded-lg border border-marvel-border">
                 <label className="flex items-center gap-3 cursor-pointer mb-3">
                     <input
                         type="checkbox"
@@ -1876,12 +1867,11 @@ const FormEditor: React.FC<FormEditorProps> = ({ heroData, onChange, displaySett
                         className="w-full bg-marvel-metal border border-marvel-border rounded px-3 py-2 text-white text-sm"
                     />
                 )}
-            </div>
+            </CollapsibleSection>
 
             {/* Additional Pages */}
-            <div className="mb-6">
-                <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-lg font-semibold text-marvel-accent">Additional Pages</h3>
+            <CollapsibleSection title="Additional Pages" defaultOpen={false} className="mb-6">
+                <div className="flex justify-end mb-3">
                     <button onClick={addPage} className="flex items-center gap-1 text-sm text-marvel-yellow hover:text-marvel-accent">
                         <Plus className="w-4 h-4" /> Add Page
                     </button>
@@ -1951,7 +1941,7 @@ const FormEditor: React.FC<FormEditorProps> = ({ heroData, onChange, displaySett
                         ))}
                     </div>
                 ))}
-            </div>
+            </CollapsibleSection>
 
             {/* Crop Editor Modal */}
             {showCropEditor && heroData.portraitImage && (
