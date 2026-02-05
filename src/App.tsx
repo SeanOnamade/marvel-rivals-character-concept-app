@@ -56,6 +56,7 @@ function App() {
     const [isExporting, setIsExporting] = useState(false);
     const [isOpeningTab, setIsOpeningTab] = useState(false);
     const [mobileTab, setMobileTab] = useState<'preview' | 'editor'>('preview');
+    const [previewScale, setPreviewScale] = useState(75); // Default 75%
     const rendererRef = useRef<HTMLDivElement>(null);
 
     // Preload preset images on app mount
@@ -63,14 +64,8 @@ function App() {
         preloadPresetImages();
     }, []);
 
-    // Keyboard shortcuts for undo/redo
+    // Keyboard shortcuts for undo/redo (unified - always use app undo)
     const handleKeyDown = useCallback((e: KeyboardEvent) => {
-        // Check if user is typing in an input/textarea
-        const target = e.target as HTMLElement;
-        if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') {
-            return;
-        }
-
         // Ctrl+Z or Cmd+Z for undo
         if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
             e.preventDefault();
@@ -250,12 +245,14 @@ function App() {
                         onDisplaySettingsChange={setDisplaySettings}
                         onBatchChange={setBoth}
                         rendererRef={rendererRef}
+                        previewScale={previewScale}
+                        onPreviewScaleChange={setPreviewScale}
                     />
                 </div>
 
                 {/* Preview Panel - Hidden on mobile unless tab selected, always visible on desktop */}
                 {showPreview && (
-                    <div className={`w-full md:flex-1 overflow-auto p-2 md:p-4 flex items-start justify-center relative ${
+                    <div className={`w-full md:flex-1 overflow-x-auto overflow-y-auto p-2 md:p-4 flex items-start relative ${
                         mobileTab === 'preview' ? 'block' : 'hidden md:flex'
                     }`}>
                         {/* Export/Preview Loading Overlay */}
@@ -282,7 +279,7 @@ function App() {
                             <div 
                                 className="preview-scaler"
                                 style={{ 
-                                    transform: 'scale(var(--preview-scale, 0.75))'
+                                    transform: `scale(${previewScale / 100})`
                                 }}
                             >
                                 <AbilityPageRenderer

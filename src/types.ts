@@ -259,7 +259,7 @@ export const getDefaultDisplaySettings = (): DisplaySettings => ({
     showRoleBadge: false,
     controlScheme: 'PC',
     currentPage: 0,
-    showBackground: false,
+    showBackground: true, // Background on by default for better aesthetics
     customBackground: undefined,
     foldSettings: getDefaultFoldSettings(),
     useImageBanner: true, // Default to image-based banner

@@ -43,6 +43,18 @@ Switch between keyboard/mouse hotkeys (SHIFT, E, F, Q) and controller buttons (L
 ### Full Image Control
 Upload hero portraits with precise positioning, scaling, cropping, and edge fade controls. Add hero logos that appear behind your character.
 
+### AI Background Removal
+Remove backgrounds from uploaded hero portraits and logos with one click using built-in AI-powered background removal. No external tools needed.
+
+### Save & Load Templates
+- Save your work locally with thumbnail previews
+- Export templates as JSON files to share with others
+- Import templates from files
+- Undo/redo support for all changes
+
+### Mobile Responsive
+Full mobile support with a tabbed interface, touch-friendly controls, and native sharing via the Web Share API.
+
 ### Complete Customization
 - Hero name, role, and difficulty rating
 - Unlimited attacks, abilities, and passives
@@ -54,7 +66,7 @@ Upload hero portraits with precise positioning, scaling, cropping, and edge fade
 - Banner color and fold styling
 
 ### High-Quality Export
-Export your creation as a crisp 1280×720 PNG image, ready to share on Discord, Reddit, Twitter, or anywhere else.
+Export your creation as a crisp 1280×720 PNG image. On mobile, share directly to any app. On desktop, download as PNG.
 
 ---
 
@@ -94,11 +106,13 @@ npm run preview
 1. **Choose a Starting Point**
    - Start with a blank template, or
    - Load a preset (Doctor Strange, The Spot)
+   - Import a template file shared by someone else
 
 2. **Customize Your Hero**
    - Set the hero name, role (Strategist/Duelist/Vanguard), and difficulty
    - Upload a hero portrait and adjust positioning
-   - Choose your banner color
+   - Use "Remove Background" to clean up uploaded images
+   - Choose your banner color and background
 
 3. **Add Abilities**
    - Fill in attacks, abilities, passives, and ultimate
@@ -109,9 +123,10 @@ npm run preview
    - Add team-up abilities with partner hero icons
    - Set whether your hero is the anchor or secondary
 
-5. **Export**
-   - Click "Export as PNG" to download your creation
-   - Share it with the community!
+5. **Save & Export**
+   - Save your template locally for later editing
+   - Export as PNG to share your creation
+   - Export as JSON to share the editable template
 
 ---
 
@@ -123,7 +138,8 @@ npm run preview
 | **TypeScript** | Type safety |
 | **Vite** | Lightning-fast dev server & build |
 | **Tailwind CSS 4** | Utility-first styling |
-| **html-to-image** | PNG export |
+| **modern-screenshot** | High-quality PNG export |
+| **@imgly/background-removal** | AI-powered background removal |
 | **Lucide React** | Beautiful icons |
 
 ---
@@ -134,6 +150,7 @@ npm run preview
 marvel-rivals-template/
 ├── public/
 │   ├── backgrounds/      # Gallery background images
+│   ├── downloads/        # Sample templates (JSON + PNG)
 │   ├── hero-icons/       # All hero avatar icons
 │   ├── icons/            # Ability icons by hero
 │   ├── logos/            # Hero logo images
@@ -142,15 +159,18 @@ marvel-rivals-template/
 ├── src/
 │   ├── components/
 │   │   ├── AbilityPageRenderer.tsx  # Main preview canvas
-│   │   ├── FormEditor.tsx           # Left-side editor panel
+│   │   ├── FormEditor.tsx           # Editor panel with all controls
 │   │   ├── HeroPortrait.tsx         # Hero image with controls
 │   │   ├── ImageCropEditor.tsx      # Crop modal
+│   │   ├── CollapsibleSection.tsx   # Mobile-friendly collapsible UI
 │   │   ├── DifficultyStars.tsx      # Star rating display
-│   │   └── ExportButton.tsx         # PNG download button
+│   │   └── ExportButton.tsx         # Export/share button
 │   ├── types.ts          # TypeScript interfaces & presets
-│   ├── utils.ts          # Helper functions
+│   ├── utils.ts          # Helper functions (export, templates)
 │   ├── App.tsx           # Main application
-│   └── index.css         # Global styles & fonts
+│   └── index.css         # Global styles & responsive design
+├── docs/
+│   └── USER_TEMPLATES_PLAN.md  # Template system documentation
 └── package.json
 ```
 

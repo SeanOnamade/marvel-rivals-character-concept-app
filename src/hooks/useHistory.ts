@@ -26,11 +26,11 @@ export function useHistory<T>(initialState: T): UseHistoryReturn<T> {
         future: [],
     });
     
-    // Track the last saved state (what's in history.past) for debouncing
-    const lastSavedStateRef = useRef<T>(initialState);
+    // Track pending state for debounce
+    const pendingStateRef = useRef<T>(initialState);
     const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-    // Track a version number that increments on undo/redo to invalidate stale timeouts
-    const historyVersionRef = useRef(0);
+    // Flag to track if we're in the middle of a debounce window
+    const isInDebounceWindowRef = useRef(false);
     
     // Clean up timer on unmount
     useEffect(() => {
@@ -42,6 +42,14 @@ export function useHistory<T>(initialState: T): UseHistoryReturn<T> {
     }, []);
 
     const setState = useCallback((newState: T | ((prev: T) => T)) => {
+        // Capture the debounce state BEFORE the setHistory callback
+        // This avoids issues with React StrictMode double-invoking the callback
+        const wasInDebounceWindow = isInDebounceWindowRef.current;
+        
+        // Immediately mark that we're in a debounce window
+        // (will be set back to false by timer if no more changes come)
+        isInDebounceWindowRef.current = true;
+        
         setHistory((currentHistory) => {
             const resolvedState = typeof newState === 'function' 
                 ? (newState as (prev: T) => T)(currentHistory.present)
@@ -52,28 +60,13 @@ export function useHistory<T>(initialState: T): UseHistoryReturn<T> {
                 return currentHistory;
             }
 
-            // Clear any pending debounce timer
-            if (debounceTimerRef.current) {
-                clearTimeout(debounceTimerRef.current);
-            }
+            // Check if this is the first change since last commit
+            const isFirstChange = !wasInDebounceWindow;
             
-            // Check if this is the first change since last save
-            const isFirstChange = JSON.stringify(currentHistory.present) === JSON.stringify(lastSavedStateRef.current);
-            
-            // Capture current version to check if undo/redo happened before timeout fires
-            const versionAtSchedule = historyVersionRef.current;
-            
-            // Schedule saving to history after debounce period
-            debounceTimerRef.current = setTimeout(() => {
-                // Only update if no undo/redo happened since this was scheduled
-                if (historyVersionRef.current === versionAtSchedule) {
-                    lastSavedStateRef.current = resolvedState;
-                }
-            }, DEBOUNCE_MS);
-            
-            // If this is the first change, we need to save the previous state to history
+            // If this is the first change, we need to save the current state to history
             if (isFirstChange) {
                 const newPast = [...currentHistory.past, currentHistory.present].slice(-MAX_HISTORY_SIZE);
+                pendingStateRef.current = resolvedState;
                 return {
                     past: newPast,
                     present: resolvedState,
@@ -81,13 +74,25 @@ export function useHistory<T>(initialState: T): UseHistoryReturn<T> {
                 };
             }
             
-            // Otherwise, just update present without adding to history (debounced)
+            // Otherwise, just update present without adding to history (still in debounce window)
+            pendingStateRef.current = resolvedState;
             return {
                 ...currentHistory,
                 present: resolvedState,
                 future: [], // Still clear future
             };
         });
+        
+        // Manage debounce timer outside of setState callback
+        if (debounceTimerRef.current) {
+            clearTimeout(debounceTimerRef.current);
+        }
+        
+        debounceTimerRef.current = setTimeout(() => {
+            // End debounce window - next change will be a new undo step
+            isInDebounceWindowRef.current = false;
+            debounceTimerRef.current = null;
+        }, DEBOUNCE_MS);
     }, []);
 
     const undo = useCallback(() => {
@@ -96,9 +101,7 @@ export function useHistory<T>(initialState: T): UseHistoryReturn<T> {
             clearTimeout(debounceTimerRef.current);
             debounceTimerRef.current = null;
         }
-        
-        // Increment version to invalidate any pending timeouts
-        historyVersionRef.current += 1;
+        isInDebounceWindowRef.current = false;
         
         setHistory((currentHistory) => {
             if (currentHistory.past.length === 0) {
@@ -108,8 +111,7 @@ export function useHistory<T>(initialState: T): UseHistoryReturn<T> {
             const previous = currentHistory.past[currentHistory.past.length - 1];
             const newPast = currentHistory.past.slice(0, -1);
             
-            // Update the saved state ref
-            lastSavedStateRef.current = previous;
+            pendingStateRef.current = previous;
 
             return {
                 past: newPast,
@@ -125,9 +127,7 @@ export function useHistory<T>(initialState: T): UseHistoryReturn<T> {
             clearTimeout(debounceTimerRef.current);
             debounceTimerRef.current = null;
         }
-        
-        // Increment version to invalidate any pending timeouts
-        historyVersionRef.current += 1;
+        isInDebounceWindowRef.current = false;
         
         setHistory((currentHistory) => {
             if (currentHistory.future.length === 0) {
@@ -137,8 +137,7 @@ export function useHistory<T>(initialState: T): UseHistoryReturn<T> {
             const next = currentHistory.future[0];
             const newFuture = currentHistory.future.slice(1);
             
-            // Update the saved state ref
-            lastSavedStateRef.current = next;
+            pendingStateRef.current = next;
 
             return {
                 past: [...currentHistory.past, currentHistory.present],
@@ -154,9 +153,10 @@ export function useHistory<T>(initialState: T): UseHistoryReturn<T> {
             clearTimeout(debounceTimerRef.current);
             debounceTimerRef.current = null;
         }
+        isInDebounceWindowRef.current = false;
         
         setHistory((currentHistory) => {
-            lastSavedStateRef.current = currentHistory.present;
+            pendingStateRef.current = currentHistory.present;
             return {
                 past: [],
                 present: currentHistory.present,

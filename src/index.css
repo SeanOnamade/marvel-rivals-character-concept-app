@@ -204,15 +204,9 @@ details > summary::marker {
   content: '';
 }
 
-/* Preview scaler - origin changes based on viewport */
+/* Preview scaler - always top left to avoid dead space */
 .preview-scaler {
   transform-origin: top left;
-}
-
-@media (min-width: 768px) {
-  .preview-scaler {
-    transform-origin: top center;
-  }
 }
 
 /* Collapsible section styles */

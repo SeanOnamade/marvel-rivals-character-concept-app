@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { HeroData, Role, Attack, Ability, TeamUpAbility, DisplaySettings, ContentPage, CropBounds, createDefaultAttack, createDefaultAbility, createDefaultTeamUp, createDefaultPassive, createDefaultContentPage, getDefaultPortraitSettings, getDefaultHeroInfoSettings, getDefaultCropBounds, getDefaultHeroData, getDefaultFoldSettings, getDefaultDisplaySettings, HERO_PRESETS, HERO_ICONS, CONSOLE_BUTTON_OPTIONS, CONSOLE_ATTACK_OPTIONS } from '../types';
 import { downloadTemplate, loadTemplateFromFile } from '../utils';
-import { Plus, Trash2, Upload, Monitor, Gamepad2, ChevronDown, ChevronUp, ChevronRight, Move, Type, Crop, GripVertical, Download, FolderOpen, Wand2, Loader2 } from 'lucide-react';
+import { Plus, Trash2, Upload, Monitor, Gamepad2, ChevronDown, ChevronUp, ChevronRight, Move, Type, Crop, GripVertical, Download, FolderOpen, Wand2, Loader2, Palette, Swords, FileText, Image } from 'lucide-react';
 import { removeBackground } from '@imgly/background-removal';
 import ImageCropEditor from './ImageCropEditor';
 import CollapsibleSection from './CollapsibleSection';
@@ -13,6 +13,8 @@ interface FormEditorProps {
     onDisplaySettingsChange: (settings: DisplaySettings) => void;
     onBatchChange?: (heroData: HeroData, displaySettings: DisplaySettings) => void;
     rendererRef?: React.RefObject<HTMLDivElement | null>;
+    previewScale: number;
+    onPreviewScaleChange: (scale: number) => void;
 }
 
 interface IconUploadProps {
@@ -173,7 +175,11 @@ const BANNER_PRESETS = [
     { name: 'Yellow', color: '#ca8a04' },
 ];
 
-const FormEditor: React.FC<FormEditorProps> = ({ heroData, onChange, displaySettings, onDisplaySettingsChange, onBatchChange, rendererRef }) => {
+// Tab type for sidebar navigation
+type EditorTab = 'appearance' | 'moveset' | 'pages';
+
+const FormEditor: React.FC<FormEditorProps> = ({ heroData, onChange, displaySettings, onDisplaySettingsChange, onBatchChange, rendererRef, previewScale, onPreviewScaleChange }) => {
+    const [activeTab, setActiveTab] = useState<EditorTab>('appearance');
     const [showCropEditor, setShowCropEditor] = useState(false);
     const [foldExpanded, setFoldExpanded] = useState(false);
     const [heroImageExpanded, setHeroImageExpanded] = useState(false);
@@ -203,6 +209,14 @@ const FormEditor: React.FC<FormEditorProps> = ({ heroData, onChange, displaySett
     const [bgRemovalError, setBgRemovalError] = useState<string | null>(null);
     const [isRemovingLogoBg, setIsRemovingLogoBg] = useState(false);
     const [logoBgRemovalError, setLogoBgRemovalError] = useState<string | null>(null);
+    const [galleryOpen, setGalleryOpen] = useState(false);
+    const [backgroundsToShow, setBackgroundsToShow] = useState(6);
+    const [zoomInputValue, setZoomInputValue] = useState(String(previewScale));
+    
+    // Sync zoom input when slider changes
+    useEffect(() => {
+        setZoomInputValue(String(previewScale));
+    }, [previewScale]);
 
     // Background removal handler for portrait
     const handleRemoveBackground = async () => {
@@ -667,11 +681,51 @@ const FormEditor: React.FC<FormEditorProps> = ({ heroData, onChange, displaySett
             className="bg-marvel-metal rounded-lg p-6 h-full overflow-y-auto"
             onDragOver={handleAutoScroll}
         >
-            <h2 className="text-2xl font-bold mb-6 text-marvel-yellow uppercase tracking-wider">
+            <h2 className="text-2xl font-bold mb-4 text-marvel-yellow uppercase tracking-wider">
                 Hero Editor
             </h2>
 
-            {/* Preset Templates */}
+            {/* Tab Navigation */}
+            <div className="flex gap-1 mb-6 bg-marvel-dark rounded-lg p-1 border border-marvel-border">
+                <button
+                    onClick={() => setActiveTab('appearance')}
+                    className={`flex-1 flex items-center justify-center gap-2 px-3 py-2.5 rounded-md text-sm font-medium transition-all ${
+                        activeTab === 'appearance'
+                            ? 'bg-marvel-yellow text-black'
+                            : 'text-gray-400 hover:text-white hover:bg-marvel-metal'
+                    }`}
+                >
+                    <Palette className="w-4 h-4" />
+                    <span className="hidden sm:inline">Appearance</span>
+                </button>
+                <button
+                    onClick={() => setActiveTab('moveset')}
+                    className={`flex-1 flex items-center justify-center gap-2 px-3 py-2.5 rounded-md text-sm font-medium transition-all ${
+                        activeTab === 'moveset'
+                            ? 'bg-marvel-yellow text-black'
+                            : 'text-gray-400 hover:text-white hover:bg-marvel-metal'
+                    }`}
+                >
+                    <Swords className="w-4 h-4" />
+                    <span className="hidden sm:inline">Moveset</span>
+                </button>
+                <button
+                    onClick={() => setActiveTab('pages')}
+                    className={`flex-1 flex items-center justify-center gap-2 px-3 py-2.5 rounded-md text-sm font-medium transition-all ${
+                        activeTab === 'pages'
+                            ? 'bg-marvel-yellow text-black'
+                            : 'text-gray-400 hover:text-white hover:bg-marvel-metal'
+                    }`}
+                >
+                    <FileText className="w-4 h-4" />
+                    <span className="hidden sm:inline">Pages</span>
+                </button>
+            </div>
+
+            {/* ========== APPEARANCE TAB ========== */}
+            {activeTab === 'appearance' && (
+            <>
+            {/* Quick Start */}
             <div className="mb-6 p-4 bg-marvel-dark rounded-lg border border-marvel-border">
                 <h3 className="text-lg font-semibold mb-3 text-marvel-accent">Quick Start</h3>
                 <div className="flex flex-wrap gap-2">
@@ -759,6 +813,55 @@ const FormEditor: React.FC<FormEditorProps> = ({ heroData, onChange, displaySett
 
             {/* Display Settings */}
             <CollapsibleSection title="Display Settings" defaultOpen={false} className="mb-6 bg-marvel-dark rounded-lg border border-marvel-border">
+                {/* Preview Zoom */}
+                <div className="mb-4">
+                    <div className="flex items-center justify-between mb-2">
+                        <label className="text-sm font-medium">Preview Zoom: {previewScale}%</label>
+                        {previewScale !== 75 && (
+                            <button
+                                onClick={() => onPreviewScaleChange(75)}
+                                className="text-xs text-gray-500 hover:text-white transition-colors"
+                            >
+                                Reset to 75%
+                            </button>
+                        )}
+                    </div>
+                    <div className="flex items-center gap-3">
+                        <input
+                            type="range"
+                            min="25"
+                            max="150"
+                            step="1"
+                            value={previewScale}
+                            onChange={(e) => onPreviewScaleChange(parseInt(e.target.value))}
+                            className="flex-1"
+                        />
+                        <input
+                            type="text"
+                            inputMode="numeric"
+                            value={zoomInputValue}
+                            onChange={(e) => setZoomInputValue(e.target.value)}
+                            onBlur={() => {
+                                const val = parseInt(zoomInputValue);
+                                if (isNaN(val) || val < 25) {
+                                    onPreviewScaleChange(25);
+                                } else if (val > 150) {
+                                    onPreviewScaleChange(150);
+                                } else {
+                                    onPreviewScaleChange(val);
+                                }
+                            }}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                    (e.target as HTMLInputElement).blur();
+                                }
+                            }}
+                            className="w-14 bg-marvel-metal border border-marvel-border rounded px-2 py-1 text-sm text-white text-center"
+                        />
+                        <span className="text-sm text-gray-400">%</span>
+                    </div>
+                </div>
+
                 {/* Control Scheme Toggle */}
                 <div className="mb-4">
                     <label className="block text-sm font-medium mb-2">Control Scheme</label>
@@ -784,132 +887,6 @@ const FormEditor: React.FC<FormEditorProps> = ({ heroData, onChange, displaySett
                             <Gamepad2 className="w-4 h-4" /> Console
                         </button>
                     </div>
-                </div>
-
-                {/* Role Badge Toggle */}
-                <div className="mb-4">
-                    <label className="flex items-center gap-3 cursor-pointer">
-                        <input
-                            type="checkbox"
-                            checked={displaySettings.showRoleBadge}
-                            onChange={(e) => updateDisplaySetting('showRoleBadge', e.target.checked)}
-                            className="w-5 h-5 rounded"
-                        />
-                        <span className="text-sm">Show Role Badge</span>
-                    </label>
-                </div>
-
-                {/* Ultimate Lightning Toggle */}
-                <div className="mb-4">
-                    <label className="flex items-center gap-3 cursor-pointer">
-                        <input
-                            type="checkbox"
-                            checked={displaySettings.showUltimateLightning === true}
-                            onChange={(e) => updateDisplaySetting('showUltimateLightning', e.target.checked)}
-                            className="w-5 h-5 rounded"
-                        />
-                        <span className="text-sm">Show Ultimate Lightning</span>
-                    </label>
-                </div>
-
-                {/* Banner Style Toggle */}
-                <div className="mb-4">
-                    <label className="flex items-center gap-3 cursor-pointer">
-                        <input
-                            type="checkbox"
-                            checked={displaySettings.useImageBanner}
-                            onChange={(e) => updateDisplaySetting('useImageBanner', e.target.checked)}
-                            className="w-5 h-5 rounded"
-                        />
-                        <span className="text-sm">Use Image Banner</span>
-                    </label>
-                    <p className="text-xs text-gray-500 ml-8 mt-1">
-                        {displaySettings.useImageBanner 
-                            ? 'Using image-based banner (matches template)' 
-                            : 'Using CSS banner (better color accuracy)'}
-                    </p>
-                    
-                    {/* Image Banner Position Controls - Collapsible */}
-                    {displaySettings.useImageBanner && (
-                        <div className="ml-8 mt-3 p-3 bg-marvel-dark rounded border border-marvel-border">
-                            <button
-                                onClick={() => setImageBannerExpanded(!imageBannerExpanded)}
-                                className="w-full flex items-center justify-between text-xs text-marvel-yellow font-bold hover:text-white transition-colors"
-                            >
-                                <span>Image Banner Position</span>
-                                {imageBannerExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-                            </button>
-                            
-                            {imageBannerExpanded && (
-                                <div className="space-y-3 mt-3">
-                                    {/* Fold Horizontal */}
-                                    <div>
-                                        <label className="text-xs text-gray-400">Fold X: {displaySettings.imageBannerSettings?.foldOffsetX || 0}px</label>
-                                        <input
-                                            type="range"
-                                            min="-50"
-                                            max="50"
-                                            value={displaySettings.imageBannerSettings?.foldOffsetX || 0}
-                                            onChange={(e) => updateDisplaySetting('imageBannerSettings', {
-                                                ...displaySettings.imageBannerSettings,
-                                                foldOffsetX: parseInt(e.target.value),
-                                            })}
-                                            className="w-full"
-                                        />
-                                    </div>
-                                    
-                                    {/* Fold Vertical */}
-                                    <div>
-                                        <label className="text-xs text-gray-400">Fold Y: {displaySettings.imageBannerSettings?.foldOffsetY || 0}px</label>
-                                        <input
-                                            type="range"
-                                            min="-50"
-                                            max="50"
-                                            value={displaySettings.imageBannerSettings?.foldOffsetY || 0}
-                                            onChange={(e) => updateDisplaySetting('imageBannerSettings', {
-                                                ...displaySettings.imageBannerSettings,
-                                                foldOffsetY: parseInt(e.target.value),
-                                            })}
-                                            className="w-full"
-                                        />
-                                    </div>
-                                    
-                                    {/* Fold Rotation */}
-                                    <div>
-                                        <label className="text-xs text-gray-400">Fold Rotation: {displaySettings.imageBannerSettings?.foldRotation || 0.5}°</label>
-                                        <input
-                                            type="range"
-                                            min="-5"
-                                            max="5"
-                                            step="0.5"
-                                            value={displaySettings.imageBannerSettings?.foldRotation || 0.5}
-                                            onChange={(e) => updateDisplaySetting('imageBannerSettings', {
-                                                ...displaySettings.imageBannerSettings,
-                                                foldRotation: parseFloat(e.target.value),
-                                            })}
-                                            className="w-full"
-                                        />
-                                    </div>
-                                    
-                                    {/* Banner Horizontal */}
-                                    <div>
-                                        <label className="text-xs text-gray-400">Banner X: {displaySettings.imageBannerSettings?.bannerOffsetX || 0}px</label>
-                                        <input
-                                            type="range"
-                                            min="-50"
-                                            max="50"
-                                            value={displaySettings.imageBannerSettings?.bannerOffsetX || 0}
-                                            onChange={(e) => updateDisplaySetting('imageBannerSettings', {
-                                                ...displaySettings.imageBannerSettings,
-                                                bannerOffsetX: parseInt(e.target.value),
-                                            })}
-                                            className="w-full"
-                                        />
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    )}
                 </div>
 
                 {/* Background Toggle */}
@@ -959,70 +936,98 @@ const FormEditor: React.FC<FormEditorProps> = ({ heroData, onChange, displaySett
                             </div>
                             
                             {/* Background Gallery */}
-                            <details className="mt-3 group">
-                                <summary className="text-xs text-marvel-yellow font-bold cursor-pointer hover:text-marvel-accent flex items-center gap-2">
-                                    <ChevronRight className="w-3 h-3 transition-transform group-open:rotate-90" />
+                            <div className="mt-3">
+                                <button
+                                    onClick={() => {
+                                        const newOpen = !galleryOpen;
+                                        setGalleryOpen(newOpen);
+                                        if (!newOpen) setBackgroundsToShow(6);
+                                    }}
+                                    className="text-xs text-marvel-yellow font-bold cursor-pointer hover:text-marvel-accent flex items-center gap-2"
+                                >
+                                    <ChevronRight className={`w-3 h-3 transition-transform ${galleryOpen ? 'rotate-90' : ''}`} />
                                     Choose from gallery
-                                </summary>
-                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 max-h-64 sm:max-h-48 overflow-y-auto p-1 mt-2">
-                                    {[
-                                        '/backgrounds/img_gallery_card_horizontal_01.png',
-                                        '/backgrounds/img_gallery_card_horizontal_02.png',
-                                        '/backgrounds/img_gallery_card_horizontal_03.png',
-                                        '/backgrounds/img_gallery_card_horizontal_04.png',
-                                        '/backgrounds/img_gallery_card_horizontal_05.png',
-                                        '/backgrounds/img_gallery_card_horizontal_06.png',
-                                        '/backgrounds/img_gallerys1_card_horizontal_01.png',
-                                        '/backgrounds/img_gallerys1_card_horizontal_02.png',
-                                        '/backgrounds/img_gallerys1_card_horizontal_03.png',
-                                        '/backgrounds/img_gallerys1_card_horizontal_04.png',
-                                        '/backgrounds/img_gallerys1_card_horizontal_05.png',
-                                        '/backgrounds/img_gallerys1_card_horizontal_06.png',
-                                        '/backgrounds/img_gallerys1_card_horizontal_07.png',
-                                        '/backgrounds/img_gallerys1_card_horizontal_08.png',
-                                        '/backgrounds/img_gallerys2_card_horizontal_01.png',
-                                        '/backgrounds/img_gallerys2_card_horizontal_02.png',
-                                        '/backgrounds/img_gallerys2_card_horizontal_03.png',
-                                        '/backgrounds/img_gallerys2_card_horizontal_04.png',
-                                        '/backgrounds/img_gallerys2_card_horizontal_05.png',
-                                        '/backgrounds/img_gallerys2_card_horizontal_06.png',
-                                        '/backgrounds/img_gallerys2_card_horizontal_07.png',
-                                        '/backgrounds/img_gallerys2_magazine_01.png',
-                                        '/backgrounds/img_gallerys3_card_horizontal_03.png',
-                                        '/backgrounds/img_gallerys3_card_horizontal_04.png',
-                                        '/backgrounds/img_gallerys3_card_horizontal_05.png',
-                                        '/backgrounds/img_gallerys3_card_horizontal_06.png',
-                                        '/backgrounds/img_gallerys3_magazine_02.png',
-                                        '/backgrounds/img_gallerys4_card_horizontal_01.png',
-                                        '/backgrounds/img_gallerys4_card_horizontal_03.png',
-                                        '/backgrounds/img_gallerys4_card_horizontal_04.png',
-                                        '/backgrounds/img_gallerys4_magazine_01.png',
-                                        '/backgrounds/img_gallerys5_card_horizontal_01.png',
-                                        '/backgrounds/img_gallerys5_card_horizontal_02.png',
-                                        '/backgrounds/img_gallerys5_card_horizontal_03.png',
-                                        '/backgrounds/Marvel_Rivals_Best_Settings_for.png',
-                                        '/backgrounds/marvel-rivals-main-menu-screen.png',
-                                        '/backgrounds/q80thme87oag1.jpg',
-                                    ].map((bg) => (
-                                        <button
-                                            key={bg}
-                                            onClick={() => updateDisplaySetting('customBackground', bg)}
-                                            className={`relative aspect-video rounded overflow-hidden border-2 transition-all hover:border-marvel-yellow ${
-                                                displaySettings.customBackground === bg 
-                                                    ? 'border-marvel-yellow ring-2 ring-marvel-yellow/50' 
-                                                    : 'border-marvel-border'
-                                            }`}
-                                        >
-                                            <img 
-                                                src={bg} 
-                                                alt="" 
-                                                loading="lazy"
-                                                className="w-full h-full object-cover"
-                                            />
-                                        </button>
-                                    ))}
-                                </div>
-                            </details>
+                                </button>
+                                {galleryOpen && (
+                                    <div className="mt-2">
+                                        <div className="grid grid-cols-1 gap-2 max-h-64 overflow-y-auto p-1">
+                                            {(() => {
+                                                const allBackgrounds = [
+                                                    '/backgrounds/img_gallery_card_horizontal_01.png',
+                                                    '/backgrounds/img_gallery_card_horizontal_02.png',
+                                                    '/backgrounds/img_gallery_card_horizontal_03.png',
+                                                    '/backgrounds/img_gallery_card_horizontal_04.png',
+                                                    '/backgrounds/img_gallery_card_horizontal_05.png',
+                                                    '/backgrounds/img_gallery_card_horizontal_06.png',
+                                                    '/backgrounds/img_gallerys1_card_horizontal_01.png',
+                                                    '/backgrounds/img_gallerys1_card_horizontal_02.png',
+                                                    '/backgrounds/img_gallerys1_card_horizontal_03.png',
+                                                    '/backgrounds/img_gallerys1_card_horizontal_04.png',
+                                                    '/backgrounds/img_gallerys1_card_horizontal_05.png',
+                                                    '/backgrounds/img_gallerys1_card_horizontal_06.png',
+                                                    '/backgrounds/img_gallerys1_card_horizontal_07.png',
+                                                    '/backgrounds/img_gallerys1_card_horizontal_08.png',
+                                                    '/backgrounds/img_gallerys2_card_horizontal_01.png',
+                                                    '/backgrounds/img_gallerys2_card_horizontal_02.png',
+                                                    '/backgrounds/img_gallerys2_card_horizontal_03.png',
+                                                    '/backgrounds/img_gallerys2_card_horizontal_04.png',
+                                                    '/backgrounds/img_gallerys2_card_horizontal_05.png',
+                                                    '/backgrounds/img_gallerys2_card_horizontal_06.png',
+                                                    '/backgrounds/img_gallerys2_card_horizontal_07.png',
+                                                    '/backgrounds/img_gallerys2_magazine_01.png',
+                                                    '/backgrounds/img_gallerys3_card_horizontal_03.png',
+                                                    '/backgrounds/img_gallerys3_card_horizontal_04.png',
+                                                    '/backgrounds/img_gallerys3_card_horizontal_05.png',
+                                                    '/backgrounds/img_gallerys3_card_horizontal_06.png',
+                                                    '/backgrounds/img_gallerys3_magazine_02.png',
+                                                    '/backgrounds/img_gallerys4_card_horizontal_01.png',
+                                                    '/backgrounds/img_gallerys4_card_horizontal_03.png',
+                                                    '/backgrounds/img_gallerys4_card_horizontal_04.png',
+                                                    '/backgrounds/img_gallerys4_magazine_01.png',
+                                                    '/backgrounds/img_gallerys5_card_horizontal_01.png',
+                                                    '/backgrounds/img_gallerys5_card_horizontal_02.png',
+                                                    '/backgrounds/img_gallerys5_card_horizontal_03.png',
+                                                    '/backgrounds/Marvel_Rivals_Best_Settings_for.png',
+                                                    '/backgrounds/marvel-rivals-main-menu-screen.png',
+                                                    '/backgrounds/q80thme87oag1.jpg',
+                                                ];
+                                                const visibleBackgrounds = allBackgrounds.slice(0, backgroundsToShow);
+                                                const remaining = allBackgrounds.length - backgroundsToShow;
+                                                return (
+                                                    <>
+                                                        {visibleBackgrounds.map((bg) => (
+                                                            <button
+                                                                key={bg}
+                                                                onClick={() => updateDisplaySetting('customBackground', bg)}
+                                                                className={`relative aspect-video rounded overflow-hidden border-2 transition-all hover:border-marvel-yellow ${
+                                                                    displaySettings.customBackground === bg 
+                                                                        ? 'border-marvel-yellow ring-2 ring-marvel-yellow/50' 
+                                                                        : 'border-marvel-border'
+                                                                }`}
+                                                            >
+                                                                <img 
+                                                                    src={bg} 
+                                                                    alt="" 
+                                                                    loading="lazy"
+                                                                    className="w-full h-full object-cover"
+                                                                />
+                                                            </button>
+                                                        ))}
+                                                        {remaining > 0 && (
+                                                            <button
+                                                                onClick={() => setBackgroundsToShow(prev => Math.min(prev + 6, allBackgrounds.length))}
+                                                                className="text-xs text-marvel-yellow hover:text-white transition-colors w-full text-center py-2 border border-marvel-border rounded hover:border-marvel-yellow"
+                                                            >
+                                                                Load more ({remaining} remaining)
+                                                            </button>
+                                                        )}
+                                                    </>
+                                                );
+                                            })()}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     )}
                 </div>
@@ -1053,126 +1058,6 @@ const FormEditor: React.FC<FormEditorProps> = ({ heroData, onChange, displaySett
                         className="w-full"
                     />
                     <p className="text-xs text-gray-500 mt-1">Reduce spacing to fit more abilities on the page</p>
-                </div>
-
-                {/* Banner Color */}
-                <div className="mb-2">
-                    <label className="block text-sm font-medium mb-2">Banner Gradient Color</label>
-                    <div className="flex items-center gap-3 mb-2">
-                        <input
-                            type="color"
-                            value={heroData.bannerColor}
-                            onChange={(e) => updateField('bannerColor', e.target.value)}
-                            className="w-12 h-10 rounded cursor-pointer border-0"
-                        />
-                        <input
-                            type="text"
-                            value={heroData.bannerColor}
-                            onChange={(e) => updateField('bannerColor', e.target.value)}
-                            className="w-24 bg-marvel-metal border border-marvel-border rounded px-2 py-1 text-sm text-white"
-                        />
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                        {BANNER_PRESETS.map((preset) => (
-                            <button
-                                key={preset.name}
-                                onClick={() => updateField('bannerColor', preset.color)}
-                                className="w-6 h-6 rounded border-2 border-transparent hover:border-white transition-colors"
-                                style={{ backgroundColor: preset.color }}
-                                title={preset.name}
-                            />
-                        ))}
-                    </div>
-                </div>
-
-                {/* Banner Fold Settings - Collapsible */}
-                <div className="mb-2 p-3 bg-marvel-metal/50 rounded border border-marvel-border">
-                    <button
-                        onClick={() => setFoldExpanded(!foldExpanded)}
-                        className="w-full flex items-center justify-between text-sm font-medium text-marvel-accent hover:text-white transition-colors"
-                    >
-                        <span>Banner Fold/Edge</span>
-                        {foldExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                    </button>
-                    
-                    {foldExpanded && (
-                        <div className="space-y-3 mt-3">
-                            <div>
-                                <label className="block text-xs text-gray-400 mb-1">
-                                    Start Y: {displaySettings.foldSettings?.startY ?? 70}%
-                                </label>
-                                <input
-                                    type="range"
-                                    min="0"
-                                    max="90"
-                                    value={displaySettings.foldSettings?.startY ?? 70}
-                                    onChange={(e) => updateDisplaySetting('foldSettings', {
-                                        ...displaySettings.foldSettings || getDefaultFoldSettings(),
-                                        startY: Number(e.target.value)
-                                    })}
-                                    className="w-full"
-                                />
-                            </div>
-                            
-                            <div>
-                                <label className="block text-xs text-gray-400 mb-1">
-                                    End X: {displaySettings.foldSettings?.endX ?? 75}%
-                                </label>
-                                <input
-                                    type="range"
-                                    min="20"
-                                    max="100"
-                                    value={displaySettings.foldSettings?.endX ?? 75}
-                                    onChange={(e) => updateDisplaySetting('foldSettings', {
-                                        ...displaySettings.foldSettings || getDefaultFoldSettings(),
-                                        endX: Number(e.target.value)
-                                    })}
-                                    className="w-full"
-                                />
-                            </div>
-                            
-                            <div>
-                                <label className="block text-xs text-gray-400 mb-1">
-                                    Thickness: {displaySettings.foldSettings?.thickness ?? 5}%
-                                </label>
-                                <input
-                                    type="range"
-                                    min="1"
-                                    max="20"
-                                    value={displaySettings.foldSettings?.thickness ?? 5}
-                                    onChange={(e) => updateDisplaySetting('foldSettings', {
-                                        ...displaySettings.foldSettings || getDefaultFoldSettings(),
-                                        thickness: Number(e.target.value)
-                                    })}
-                                    className="w-full"
-                                />
-                            </div>
-                            
-                            <div>
-                                <label className="block text-xs text-gray-400 mb-1">
-                                    Brightness: {(displaySettings.foldSettings?.brightness ?? 1.3).toFixed(2)}x
-                                </label>
-                                <input
-                                    type="range"
-                                    min="100"
-                                    max="150"
-                                    value={(displaySettings.foldSettings?.brightness ?? 1.3) * 100}
-                                    onChange={(e) => updateDisplaySetting('foldSettings', {
-                                        ...displaySettings.foldSettings || getDefaultFoldSettings(),
-                                        brightness: Number(e.target.value) / 100
-                                    })}
-                                    className="w-full"
-                                />
-                            </div>
-                            
-                            <button
-                                onClick={() => updateDisplaySetting('foldSettings', getDefaultFoldSettings())}
-                                className="text-xs text-gray-500 hover:text-white transition-colors"
-                            >
-                                Reset to default
-                            </button>
-                        </div>
-                    )}
                 </div>
             </CollapsibleSection>
 
@@ -1332,6 +1217,17 @@ const FormEditor: React.FC<FormEditorProps> = ({ heroData, onChange, displaySett
                         <option value="Duelist">Duelist</option>
                         <option value="Vanguard">Vanguard</option>
                     </select>
+                    
+                    {/* Show Role Badge Toggle */}
+                    <label className="flex items-center gap-3 cursor-pointer mt-3">
+                        <input
+                            type="checkbox"
+                            checked={displaySettings.showRoleBadge}
+                            onChange={(e) => updateDisplaySetting('showRoleBadge', e.target.checked)}
+                            className="w-4 h-4 rounded"
+                        />
+                        <span className="text-sm text-gray-400">Show Role Badge on Portrait</span>
+                    </label>
                 </div>
 
                 <div className="mb-4">
@@ -1348,198 +1244,445 @@ const FormEditor: React.FC<FormEditorProps> = ({ heroData, onChange, displaySett
                 </div>
             </CollapsibleSection>
 
-            {/* Hero Image Position - Collapsible */}
-            <div className="mb-6 p-4 bg-marvel-dark rounded-lg border border-marvel-border">
-                <button
-                    onClick={() => setHeroImageExpanded(!heroImageExpanded)}
-                    className="w-full flex items-center justify-between"
-                >
-                    <div className="flex items-center gap-2">
-                        <Move className="w-4 h-4 text-marvel-yellow" />
-                        <h3 className="text-lg font-semibold text-marvel-accent">Hero Image Position</h3>
-                    </div>
-                    {heroImageExpanded ? <ChevronUp className="w-4 h-4 text-gray-400" /> : <ChevronDown className="w-4 h-4 text-gray-400" />}
-                </button>
-                
-                {heroImageExpanded && (
-                <div className="space-y-3 mt-3">
-                    <div>
-                        <label className="block text-xs text-gray-400 mb-1">Scale: {(heroData.portraitSettings?.scale || 1).toFixed(1)}x</label>
-                        <input
-                            type="range"
-                            min="0.5"
-                            max="3"
-                            step="0.1"
-                            value={heroData.portraitSettings?.scale || 1}
-                            onChange={(e) => updateField('portraitSettings', { 
-                                ...heroData.portraitSettings || getDefaultPortraitSettings(), 
-                                scale: parseFloat(e.target.value) 
-                            })}
-                            className="w-full"
-                        />
-                    </div>
-                    
-                    <div>
-                        <label className="block text-xs text-gray-400 mb-1">Horizontal: {heroData.portraitSettings?.offsetX || 0}%</label>
-                        <input
-                            type="range"
-                            min="-50"
-                            max="50"
-                            value={heroData.portraitSettings?.offsetX || 0}
-                            onChange={(e) => updateField('portraitSettings', { 
-                                ...heroData.portraitSettings || getDefaultPortraitSettings(), 
-                                offsetX: parseInt(e.target.value) 
-                            })}
-                            className="w-full"
-                        />
-                    </div>
-                    
-                    <div>
-                        <label className="block text-xs text-gray-400 mb-1">Vertical: {heroData.portraitSettings?.offsetY || 0}%</label>
-                        <input
-                            type="range"
-                            min="-50"
-                            max="50"
-                            value={heroData.portraitSettings?.offsetY || 0}
-                            onChange={(e) => updateField('portraitSettings', { 
-                                ...heroData.portraitSettings || getDefaultPortraitSettings(), 
-                                offsetY: parseInt(e.target.value) 
-                            })}
-                            className="w-full"
-                        />
-                    </div>
-                    
-                    <div>
-                        <label className="block text-xs text-gray-400 mb-1">Edge Fade: {heroData.portraitSettings?.fadeAmount ?? 50}%</label>
-                        <input
-                            type="range"
-                            min="0"
-                            max="100"
-                            value={heroData.portraitSettings?.fadeAmount ?? 50}
-                            onChange={(e) => updateField('portraitSettings', { 
-                                ...heroData.portraitSettings || getDefaultPortraitSettings(), 
-                                fadeAmount: parseInt(e.target.value) 
-                            })}
-                            className="w-full"
-                        />
-                    </div>
-                    
-                    <div className="border-t border-gray-700 pt-3 mt-3">
-                        <label className="block text-xs text-gray-300 font-semibold mb-2">Image Crop</label>
-                        
-                        {heroData.portraitImage ? (
-                            <div className="space-y-2">
-                                <button
-                                    onClick={() => setShowCropEditor(true)}
-                                    className="flex items-center gap-2 w-full px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-500 transition-colors text-sm"
-                                >
-                                    <Crop className="w-4 h-4" />
-                                    Open Crop Editor
-                                </button>
-                                
-                                {/* Remove Background Button */}
-                                <button
-                                    onClick={handleRemoveBackground}
-                                    disabled={isRemovingBackground}
-                                    className="flex items-center justify-center gap-2 w-full px-3 py-2 bg-purple-600 text-white rounded hover:bg-purple-500 transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                                >
-                                    {isRemovingBackground ? (
-                                        <>
-                                            <Loader2 className="w-4 h-4 animate-spin" />
-                                            Removing Background...
-                                        </>
-                                    ) : (
-                                        <>
-                                            <Wand2 className="w-4 h-4" />
-                                            Remove Background
-                                        </>
-                                    )}
-                                </button>
-                                {bgRemovalError && (
-                                    <p className="text-xs text-red-400">{bgRemovalError}</p>
-                                )}
-                                
-                                {heroData.portraitSettings?.crop && (
-                                    heroData.portraitSettings.crop.top > 0 || 
-                                    heroData.portraitSettings.crop.left > 0 || 
-                                    heroData.portraitSettings.crop.right > 0 || 
-                                    heroData.portraitSettings.crop.bottom > 0
-                                ) && (
-                                    <div className="text-xs text-gray-400">
-                                        Crop: T{heroData.portraitSettings.crop.top.toFixed(0)}% L{heroData.portraitSettings.crop.left.toFixed(0)}% R{heroData.portraitSettings.crop.right.toFixed(0)}% B{heroData.portraitSettings.crop.bottom.toFixed(0)}%
-                                    </div>
-                                )}
+            {/* Portrait & Banner Section */}
+            <CollapsibleSection title="Portrait & Banner" defaultOpen={true} className="mb-6">
+                {/* Hero Image Upload - Primary Action */}
+                <div className="mb-4">
+                    <label className="block text-sm font-medium mb-2">Hero Portrait Image</label>
+                    <div className="flex flex-col gap-3">
+                        {/* Preview thumbnail */}
+                        {heroData.portraitImage && (
+                            <div className="w-full h-32 border border-marvel-border rounded bg-marvel-dark overflow-hidden">
+                                <img src={heroData.portraitImage} alt="Hero Portrait" className="w-full h-full object-contain" />
                             </div>
-                        ) : (
-                            <p className="text-xs text-gray-500 italic">Upload an image first to crop</p>
+                        )}
+                        
+                        {/* Action buttons */}
+                        <div className="flex flex-wrap gap-2">
+                            <label className="flex items-center gap-2 px-4 py-2 bg-marvel-yellow text-black rounded font-medium text-sm hover:bg-yellow-400 transition-colors cursor-pointer">
+                                <Image className="w-4 h-4" />
+                                <span>{heroData.portraitImage ? 'Change Image' : 'Upload Image'}</span>
+                                <input
+                                    type="file"
+                                    accept="image/png,image/jpeg,image/jpg,image/gif,image/webp,image/*"
+                                    className="hidden"
+                                    onChange={(e) => {
+                                        const file = e.target.files?.[0];
+                                        if (file) {
+                                            const reader = new FileReader();
+                                            reader.onload = (event) => {
+                                                updateField('portraitImage', event.target?.result as string);
+                                            };
+                                            reader.readAsDataURL(file);
+                                        }
+                                    }}
+                                />
+                            </label>
+                            
+                            {heroData.portraitImage && (
+                                <>
+                                    <button
+                                        onClick={handleRemoveBackground}
+                                        disabled={isRemovingBackground}
+                                        className="flex items-center gap-2 px-3 py-2 bg-purple-600 text-white rounded text-sm hover:bg-purple-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        {isRemovingBackground ? (
+                                            <>
+                                                <Loader2 className="w-4 h-4 animate-spin" />
+                                                Processing...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Wand2 className="w-4 h-4" />
+                                                Remove BG
+                                            </>
+                                        )}
+                                    </button>
+                                    <button
+                                        onClick={() => setShowCropEditor(true)}
+                                        className="flex items-center gap-2 px-3 py-2 bg-blue-600 text-white rounded text-sm hover:bg-blue-500 transition-colors"
+                                    >
+                                        <Crop className="w-4 h-4" />
+                                        Crop
+                                    </button>
+                                    <button
+                                        onClick={() => updateField('portraitImage', undefined)}
+                                        className="px-3 py-2 bg-red-600/20 border border-red-600/50 rounded text-sm text-red-400 hover:bg-red-600/30 transition-colors"
+                                    >
+                                        Remove
+                                    </button>
+                                </>
+                            )}
+                        </div>
+                        {bgRemovalError && (
+                            <p className="text-xs text-red-400">{bgRemovalError}</p>
                         )}
                     </div>
-                    
-                    <button
-                        onClick={() => updateField('portraitSettings', getDefaultPortraitSettings())}
-                        className="text-xs text-gray-400 hover:text-white"
-                    >
-                        Reset to default
-                    </button>
                 </div>
-                )}
-            </div>
 
-            {/* Hero Name/Difficulty Position - Collapsible */}
-            <div className="mb-6 p-4 bg-marvel-dark rounded-lg border border-marvel-border">
-                <button
-                    onClick={() => setHeroNameExpanded(!heroNameExpanded)}
-                    className="w-full flex items-center justify-between"
-                >
-                    <div className="flex items-center gap-2">
-                        <Type className="w-4 h-4 text-marvel-yellow" />
-                        <h3 className="text-lg font-semibold text-marvel-accent">Hero Name Position</h3>
+                {/* Hero Image Position - Collapsible */}
+                <div className="mb-4 p-3 bg-marvel-dark/50 rounded border border-marvel-border">
+                    <button
+                        onClick={() => setHeroImageExpanded(!heroImageExpanded)}
+                        className="w-full flex items-center justify-between text-sm font-medium text-marvel-accent hover:text-white transition-colors"
+                    >
+                        <div className="flex items-center gap-2">
+                            <Move className="w-4 h-4" />
+                            <span>Hero Image Position</span>
+                        </div>
+                        {heroImageExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                    </button>
+                    
+                    {heroImageExpanded && (
+                    <div className="space-y-3 mt-3">
+                        <div>
+                            <label className="block text-xs text-gray-400 mb-1">Scale: {(heroData.portraitSettings?.scale || 1).toFixed(1)}x</label>
+                            <input
+                                type="range"
+                                min="0.5"
+                                max="3"
+                                step="0.1"
+                                value={heroData.portraitSettings?.scale || 1}
+                                onChange={(e) => updateField('portraitSettings', { 
+                                    ...heroData.portraitSettings || getDefaultPortraitSettings(), 
+                                    scale: parseFloat(e.target.value) 
+                                })}
+                                className="w-full"
+                            />
+                        </div>
+                        
+                        <div>
+                            <label className="block text-xs text-gray-400 mb-1">Horizontal: {heroData.portraitSettings?.offsetX || 0}%</label>
+                            <input
+                                type="range"
+                                min="-50"
+                                max="50"
+                                value={heroData.portraitSettings?.offsetX || 0}
+                                onChange={(e) => updateField('portraitSettings', { 
+                                    ...heroData.portraitSettings || getDefaultPortraitSettings(), 
+                                    offsetX: parseInt(e.target.value) 
+                                })}
+                                className="w-full"
+                            />
+                        </div>
+                        
+                        <div>
+                            <label className="block text-xs text-gray-400 mb-1">Vertical: {heroData.portraitSettings?.offsetY || 0}%</label>
+                            <input
+                                type="range"
+                                min="-50"
+                                max="50"
+                                value={heroData.portraitSettings?.offsetY || 0}
+                                onChange={(e) => updateField('portraitSettings', { 
+                                    ...heroData.portraitSettings || getDefaultPortraitSettings(), 
+                                    offsetY: parseInt(e.target.value) 
+                                })}
+                                className="w-full"
+                            />
+                        </div>
+                        
+                        <div>
+                            <label className="block text-xs text-gray-400 mb-1">Edge Fade: {heroData.portraitSettings?.fadeAmount ?? 50}%</label>
+                            <input
+                                type="range"
+                                min="0"
+                                max="100"
+                                value={heroData.portraitSettings?.fadeAmount ?? 50}
+                                onChange={(e) => updateField('portraitSettings', { 
+                                    ...heroData.portraitSettings || getDefaultPortraitSettings(), 
+                                    fadeAmount: parseInt(e.target.value) 
+                                })}
+                                className="w-full"
+                            />
+                        </div>
+                        
+                        <button
+                            onClick={() => updateField('portraitSettings', getDefaultPortraitSettings())}
+                            className="text-xs text-gray-500 hover:text-white transition-colors"
+                        >
+                            Reset to default
+                        </button>
                     </div>
-                    {heroNameExpanded ? <ChevronUp className="w-4 h-4 text-gray-400" /> : <ChevronDown className="w-4 h-4 text-gray-400" />}
-                </button>
-                
-                {heroNameExpanded && (
-                <div className="space-y-3 mt-3">
-                    <div>
-                        <label className="block text-xs text-gray-400 mb-1">Horizontal: {heroData.heroInfoSettings?.offsetX || 0}px</label>
+                    )}
+                </div>
+
+                {/* Hero Name Position - Collapsible */}
+                <div className="mb-4 p-3 bg-marvel-dark/50 rounded border border-marvel-border">
+                    <button
+                        onClick={() => setHeroNameExpanded(!heroNameExpanded)}
+                        className="w-full flex items-center justify-between text-sm font-medium text-marvel-accent hover:text-white transition-colors"
+                    >
+                        <div className="flex items-center gap-2">
+                            <Type className="w-4 h-4" />
+                            <span>Hero Name Position</span>
+                        </div>
+                        {heroNameExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                    </button>
+                    
+                    {heroNameExpanded && (
+                    <div className="space-y-3 mt-3">
+                        <div>
+                            <label className="block text-xs text-gray-400 mb-1">Horizontal: {heroData.heroInfoSettings?.offsetX || 0}px</label>
+                            <input
+                                type="range"
+                                min="-100"
+                                max="100"
+                                value={heroData.heroInfoSettings?.offsetX || 0}
+                                onChange={(e) => updateField('heroInfoSettings', { 
+                                    ...heroData.heroInfoSettings || getDefaultHeroInfoSettings(), 
+                                    offsetX: parseInt(e.target.value) 
+                                })}
+                                className="w-full"
+                            />
+                        </div>
+                        
+                        <div>
+                            <label className="block text-xs text-gray-400 mb-1">Vertical: {heroData.heroInfoSettings?.offsetY || 0}px</label>
+                            <input
+                                type="range"
+                                min="-200"
+                                max="200"
+                                value={heroData.heroInfoSettings?.offsetY || 0}
+                                onChange={(e) => updateField('heroInfoSettings', { 
+                                    ...heroData.heroInfoSettings || getDefaultHeroInfoSettings(), 
+                                    offsetY: parseInt(e.target.value) 
+                                })}
+                                className="w-full"
+                            />
+                        </div>
+                        
+                        <button
+                            onClick={() => updateField('heroInfoSettings', getDefaultHeroInfoSettings())}
+                            className="text-xs text-gray-500 hover:text-white transition-colors"
+                        >
+                            Reset to default
+                        </button>
+                    </div>
+                    )}
+                </div>
+
+                {/* Banner Color */}
+                <div className="mb-4">
+                    <label className="block text-sm font-medium mb-2">Banner Color</label>
+                    <div className="flex items-center gap-3 mb-2">
                         <input
-                            type="range"
-                            min="-100"
-                            max="100"
-                            value={heroData.heroInfoSettings?.offsetX || 0}
-                            onChange={(e) => updateField('heroInfoSettings', { 
-                                ...heroData.heroInfoSettings || getDefaultHeroInfoSettings(), 
-                                offsetX: parseInt(e.target.value) 
-                            })}
-                            className="w-full"
+                            type="color"
+                            value={heroData.bannerColor}
+                            onChange={(e) => updateField('bannerColor', e.target.value)}
+                            className="w-12 h-10 rounded cursor-pointer border-0"
+                        />
+                        <input
+                            type="text"
+                            value={heroData.bannerColor}
+                            onChange={(e) => updateField('bannerColor', e.target.value)}
+                            className="w-24 bg-marvel-dark border border-marvel-border rounded px-2 py-1 text-sm text-white"
                         />
                     </div>
-                    
-                    <div>
-                        <label className="block text-xs text-gray-400 mb-1">Vertical: {heroData.heroInfoSettings?.offsetY || 0}px</label>
-                        <input
-                            type="range"
-                            min="-200"
-                            max="200"
-                            value={heroData.heroInfoSettings?.offsetY || 0}
-                            onChange={(e) => updateField('heroInfoSettings', { 
-                                ...heroData.heroInfoSettings || getDefaultHeroInfoSettings(), 
-                                offsetY: parseInt(e.target.value) 
-                            })}
-                            className="w-full"
-                        />
+                    <div className="flex flex-wrap gap-2">
+                        {BANNER_PRESETS.map((preset) => (
+                            <button
+                                key={preset.name}
+                                onClick={() => updateField('bannerColor', preset.color)}
+                                className="w-6 h-6 rounded border-2 border-transparent hover:border-white transition-colors"
+                                style={{ backgroundColor: preset.color }}
+                                title={preset.name}
+                            />
+                        ))}
                     </div>
-                    
-                    <button
-                        onClick={() => updateField('heroInfoSettings', getDefaultHeroInfoSettings())}
-                        className="text-xs text-gray-400 hover:text-white"
-                    >
-                        Reset to default
-                    </button>
                 </div>
-                )}
-            </div>
 
+                {/* Banner Fold/Edge - Collapsible */}
+                <div className="mb-4 p-3 bg-marvel-dark/50 rounded border border-marvel-border">
+                    <button
+                        onClick={() => setFoldExpanded(!foldExpanded)}
+                        className="w-full flex items-center justify-between text-sm font-medium text-marvel-accent hover:text-white transition-colors"
+                    >
+                        <span>Banner Fold/Edge</span>
+                        {foldExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                    </button>
+                    
+                    {foldExpanded && (
+                        <div className="space-y-3 mt-3">
+                            <div>
+                                <label className="block text-xs text-gray-400 mb-1">
+                                    Start Y: {displaySettings.foldSettings?.startY ?? 70}%
+                                </label>
+                                <input
+                                    type="range"
+                                    min="0"
+                                    max="90"
+                                    value={displaySettings.foldSettings?.startY ?? 70}
+                                    onChange={(e) => updateDisplaySetting('foldSettings', {
+                                        ...displaySettings.foldSettings || getDefaultFoldSettings(),
+                                        startY: Number(e.target.value)
+                                    })}
+                                    className="w-full"
+                                />
+                            </div>
+                            
+                            <div>
+                                <label className="block text-xs text-gray-400 mb-1">
+                                    End X: {displaySettings.foldSettings?.endX ?? 75}%
+                                </label>
+                                <input
+                                    type="range"
+                                    min="20"
+                                    max="100"
+                                    value={displaySettings.foldSettings?.endX ?? 75}
+                                    onChange={(e) => updateDisplaySetting('foldSettings', {
+                                        ...displaySettings.foldSettings || getDefaultFoldSettings(),
+                                        endX: Number(e.target.value)
+                                    })}
+                                    className="w-full"
+                                />
+                            </div>
+                            
+                            <div>
+                                <label className="block text-xs text-gray-400 mb-1">
+                                    Thickness: {displaySettings.foldSettings?.thickness ?? 5}%
+                                </label>
+                                <input
+                                    type="range"
+                                    min="1"
+                                    max="20"
+                                    value={displaySettings.foldSettings?.thickness ?? 5}
+                                    onChange={(e) => updateDisplaySetting('foldSettings', {
+                                        ...displaySettings.foldSettings || getDefaultFoldSettings(),
+                                        thickness: Number(e.target.value)
+                                    })}
+                                    className="w-full"
+                                />
+                            </div>
+                            
+                            <div>
+                                <label className="block text-xs text-gray-400 mb-1">
+                                    Brightness: {(displaySettings.foldSettings?.brightness ?? 1.3).toFixed(2)}x
+                                </label>
+                                <input
+                                    type="range"
+                                    min="100"
+                                    max="150"
+                                    value={(displaySettings.foldSettings?.brightness ?? 1.3) * 100}
+                                    onChange={(e) => updateDisplaySetting('foldSettings', {
+                                        ...displaySettings.foldSettings || getDefaultFoldSettings(),
+                                        brightness: Number(e.target.value) / 100
+                                    })}
+                                    className="w-full"
+                                />
+                            </div>
+                            
+                            <button
+                                onClick={() => updateDisplaySetting('foldSettings', getDefaultFoldSettings())}
+                                className="text-xs text-gray-500 hover:text-white transition-colors"
+                            >
+                                Reset to default
+                            </button>
+                        </div>
+                    )}
+                </div>
+
+                {/* Specialized Image Banner Toggle */}
+                <div className="mb-2 p-3 bg-marvel-dark/50 rounded border border-marvel-border">
+                    <label className="flex items-center gap-3 cursor-pointer">
+                        <input
+                            type="checkbox"
+                            checked={displaySettings.useImageBanner}
+                            onChange={(e) => updateDisplaySetting('useImageBanner', e.target.checked)}
+                            className="w-4 h-4 rounded"
+                        />
+                        <span className="text-sm">Use Specialized Image Banner</span>
+                    </label>
+                    <p className="text-xs text-gray-500 ml-7 mt-1">
+                        {displaySettings.useImageBanner 
+                            ? 'Using image-based banner (matches official template)' 
+                            : 'Using CSS banner (better color accuracy)'}
+                    </p>
+                    
+                    {/* Image Banner Position Controls */}
+                    {displaySettings.useImageBanner && (
+                        <div className="mt-3 pt-3 border-t border-marvel-border">
+                            <button
+                                onClick={() => setImageBannerExpanded(!imageBannerExpanded)}
+                                className="w-full flex items-center justify-between text-xs text-marvel-yellow font-bold hover:text-white transition-colors"
+                            >
+                                <span>Image Banner Position</span>
+                                {imageBannerExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                            </button>
+                            
+                            {imageBannerExpanded && (
+                                <div className="space-y-3 mt-3">
+                                    <div>
+                                        <label className="text-xs text-gray-400">Fold X: {displaySettings.imageBannerSettings?.foldOffsetX || 0}px</label>
+                                        <input
+                                            type="range"
+                                            min="-50"
+                                            max="50"
+                                            value={displaySettings.imageBannerSettings?.foldOffsetX || 0}
+                                            onChange={(e) => updateDisplaySetting('imageBannerSettings', {
+                                                ...displaySettings.imageBannerSettings,
+                                                foldOffsetX: parseInt(e.target.value),
+                                            })}
+                                            className="w-full"
+                                        />
+                                    </div>
+                                    
+                                    <div>
+                                        <label className="text-xs text-gray-400">Fold Y: {displaySettings.imageBannerSettings?.foldOffsetY || 0}px</label>
+                                        <input
+                                            type="range"
+                                            min="-50"
+                                            max="50"
+                                            value={displaySettings.imageBannerSettings?.foldOffsetY || 0}
+                                            onChange={(e) => updateDisplaySetting('imageBannerSettings', {
+                                                ...displaySettings.imageBannerSettings,
+                                                foldOffsetY: parseInt(e.target.value),
+                                            })}
+                                            className="w-full"
+                                        />
+                                    </div>
+                                    
+                                    <div>
+                                        <label className="text-xs text-gray-400">Fold Rotation: {displaySettings.imageBannerSettings?.foldRotation || 0.5}°</label>
+                                        <input
+                                            type="range"
+                                            min="-5"
+                                            max="5"
+                                            step="0.5"
+                                            value={displaySettings.imageBannerSettings?.foldRotation || 0.5}
+                                            onChange={(e) => updateDisplaySetting('imageBannerSettings', {
+                                                ...displaySettings.imageBannerSettings,
+                                                foldRotation: parseFloat(e.target.value),
+                                            })}
+                                            className="w-full"
+                                        />
+                                    </div>
+                                    
+                                    <div>
+                                        <label className="text-xs text-gray-400">Banner X: {displaySettings.imageBannerSettings?.bannerOffsetX || 0}px</label>
+                                        <input
+                                            type="range"
+                                            min="-50"
+                                            max="50"
+                                            value={displaySettings.imageBannerSettings?.bannerOffsetX || 0}
+                                            onChange={(e) => updateDisplaySetting('imageBannerSettings', {
+                                                ...displaySettings.imageBannerSettings,
+                                                bannerOffsetX: parseInt(e.target.value),
+                                            })}
+                                            className="w-full"
+                                        />
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </div>
+            </CollapsibleSection>
+            </>
+            )}
+
+            {/* ========== MOVESET TAB ========== */}
+            {activeTab === 'moveset' && (
+            <>
             {/* Attacks */}
             <CollapsibleSection title="Attacks" defaultOpen={true} className="mb-6">
                 <div className="flex justify-end mb-3">
@@ -1809,6 +1952,17 @@ const FormEditor: React.FC<FormEditorProps> = ({ heroData, onChange, displaySett
 
             {/* Ultimate */}
             <CollapsibleSection title="Ultimate (Top of Abilities)" defaultOpen={true} className="mb-6">
+                {/* Ultimate Lightning Toggle */}
+                <label className="flex items-center gap-3 cursor-pointer mb-4 p-2 bg-marvel-dark/50 rounded border border-marvel-border">
+                    <input
+                        type="checkbox"
+                        checked={displaySettings.showUltimateLightning === true}
+                        onChange={(e) => updateDisplaySetting('showUltimateLightning', e.target.checked)}
+                        className="w-4 h-4 rounded"
+                    />
+                    <span className="text-sm text-gray-300">Show Lightning Effect on Ultimate Icon</span>
+                </label>
+                
                 <div className="p-3 bg-marvel-dark rounded border border-marvel-yellow/30">
                     <div className="flex items-center justify-between mb-2">
                         <h4 className="text-sm font-bold text-marvel-yellow">Ultimate</h4>
@@ -1997,9 +2151,14 @@ const FormEditor: React.FC<FormEditorProps> = ({ heroData, onChange, displaySett
                     />
                 )}
             </CollapsibleSection>
+            </>
+            )}
 
+            {/* ========== PAGES TAB ========== */}
+            {activeTab === 'pages' && (
+            <>
             {/* Additional Pages */}
-            <CollapsibleSection title="Additional Pages" defaultOpen={false} className="mb-6">
+            <CollapsibleSection title="Additional Pages" defaultOpen={true} className="mb-6">
                 <div className="flex justify-end mb-3">
                     <button onClick={addPage} className="flex items-center gap-1 text-sm text-marvel-yellow hover:text-marvel-accent">
                         <Plus className="w-4 h-4" /> Add Page
@@ -2071,6 +2230,8 @@ const FormEditor: React.FC<FormEditorProps> = ({ heroData, onChange, displaySett
                     </div>
                 ))}
             </CollapsibleSection>
+            </>
+            )}
 
             {/* Crop Editor Modal */}
             {showCropEditor && heroData.portraitImage && (
