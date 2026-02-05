@@ -634,7 +634,7 @@ export const HERO_PRESETS: HeroPresetConfig[] = [
         name: 'Doctor Strange', 
         getData: getDoctorStrangePreset,
         getDisplaySettings: () => ({
-            customBackground: '/backgrounds/marvel-rivals-main-menu-screen.png',
+            customBackground: '/backgrounds/q80thme87oag1.jpg',
             showBackground: true,
             contentOffsetY: 25,
             abilitySpacing: 16,
@@ -644,7 +644,7 @@ export const HERO_PRESETS: HeroPresetConfig[] = [
         name: 'The Spot', 
         getData: getSpotPreset,
         getDisplaySettings: () => ({
-            customBackground: '/backgrounds/marvel-rivals-main-menu-screen.png',
+            customBackground: '/backgrounds/marvel-rivals-main-menu-screen-2.png',
             showBackground: true,
             contentOffsetY: 78,
             abilitySpacing: 0,

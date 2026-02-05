@@ -658,7 +658,7 @@ const AbilityPageRenderer = React.forwardRef<HTMLDivElement, AbilityPageRenderer
         );
 
         // Background image source
-        const backgroundImage = displaySettings.customBackground || '/backgrounds/marvel-rivals-main-menu-screen.png';
+        const backgroundImage = displaySettings.customBackground || '/backgrounds/q80thme87oag1.jpg';
 
         return (
             <div 

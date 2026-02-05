@@ -19,7 +19,7 @@ export const preloadPresetImages = (): void => {
         '/downloads/ChatGPT_Image_Feb_2__2026__03_57_45_AM-removebg-preview.png',
         '/logos/the-spot.png',
         // Common backgrounds
-        '/backgrounds/marvel-rivals-main-menu-screen.png',
+        '/backgrounds/q80thme87oag1.jpg',
         // Hero icons (commonly used in team-ups)
         '/hero-icons/hulk_avatar.png',
         '/hero-icons/doctor-strange_avatar.png',

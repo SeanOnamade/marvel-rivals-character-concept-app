@@ -992,6 +992,8 @@ const FormEditor: React.FC<FormEditorProps> = ({ heroData, onChange, displaySett
                                         <div className="grid grid-cols-1 gap-2 max-h-64 overflow-y-auto p-1">
                                             {(() => {
                                                 const allBackgrounds = [
+                                                    '/backgrounds/q80thme87oag1.jpg',
+                                                    '/backgrounds/marvel-rivals-main-menu-screen-2.png',
                                                     '/backgrounds/img_gallery_card_horizontal_01.png',
                                                     '/backgrounds/img_gallery_card_horizontal_02.png',
                                                     '/backgrounds/img_gallery_card_horizontal_03.png',
@@ -1027,8 +1029,6 @@ const FormEditor: React.FC<FormEditorProps> = ({ heroData, onChange, displaySett
                                                     '/backgrounds/img_gallerys5_card_horizontal_02.png',
                                                     '/backgrounds/img_gallerys5_card_horizontal_03.png',
                                                     '/backgrounds/Marvel_Rivals_Best_Settings_for.png',
-                                                    '/backgrounds/marvel-rivals-main-menu-screen.png',
-                                                    '/backgrounds/q80thme87oag1.jpg',
                                                 ];
                                                 const visibleBackgrounds = allBackgrounds.slice(0, backgroundsToShow);
                                                 const remaining = allBackgrounds.length - backgroundsToShow;
