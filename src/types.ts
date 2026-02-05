@@ -119,6 +119,7 @@ export interface HeroLogoSettings {
     offsetX: number; // Horizontal offset (-50 to 50, default 0)
     offsetY: number; // Vertical offset (-50 to 50, default 0)
     scale: number; // Scale (0.5 to 2, default 1)
+    crop?: CropBounds; // Optional crop bounds for the logo
 }
 
 export const getDefaultHeroLogoSettings = (): HeroLogoSettings => ({

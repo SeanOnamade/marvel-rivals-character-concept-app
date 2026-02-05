@@ -60,7 +60,7 @@ function App() {
     const rendererRef = useRef<HTMLDivElement>(null);
     
     // "Both" mode pinned preview - pinch/zoom/pan state
-    const [pinnedScale, setPinnedScale] = useState(0.32); // Default 32%
+    const [pinnedScale, setPinnedScale] = useState(0.24); // Default 24%
     const [pinnedPan, setPinnedPan] = useState({ x: 0, y: 0 });
     const pinnedPreviewRef = useRef<HTMLDivElement>(null);
     const pinchStateRef = useRef<{
@@ -162,7 +162,7 @@ function App() {
     useEffect(() => {
         if (mobileTab === 'both') {
             setPinnedPan({ x: 0, y: 0 });
-            setPinnedScale(0.32);
+            setPinnedScale(0.24);
         }
     }, [mobileTab]);
 

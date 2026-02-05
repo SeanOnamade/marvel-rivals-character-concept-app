@@ -181,6 +181,7 @@ type EditorTab = 'appearance' | 'moveset' | 'pages';
 const FormEditor: React.FC<FormEditorProps> = ({ heroData, onChange, displaySettings, onDisplaySettingsChange, onBatchChange, rendererRef, previewScale, onPreviewScaleChange }) => {
     const [activeTab, setActiveTab] = useState<EditorTab>('appearance');
     const [showCropEditor, setShowCropEditor] = useState(false);
+    const [showLogoCropEditor, setShowLogoCropEditor] = useState(false); // Logo crop editor
     const [characterCropEditorId, setCharacterCropEditorId] = useState<string | null>(null); // Team-up ID for character crop editor
     const [foldExpanded, setFoldExpanded] = useState(false);
     const [heroImageExpanded, setHeroImageExpanded] = useState(false);
@@ -1637,6 +1638,13 @@ const FormEditor: React.FC<FormEditorProps> = ({ heroData, onChange, displaySett
                                         )}
                                     </button>
                                     <button
+                                        onClick={() => setShowLogoCropEditor(true)}
+                                        className="flex items-center gap-1 px-2 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-500 transition-colors"
+                                    >
+                                        <Crop className="w-3 h-3" />
+                                        Crop Logo
+                                    </button>
+                                    <button
                                         onClick={() => updateField('heroLogo', undefined)}
                                         className="text-xs text-red-400 hover:text-red-300"
                                     >
@@ -2391,6 +2399,25 @@ const FormEditor: React.FC<FormEditorProps> = ({ heroData, onChange, displaySett
                     />
                 );
             })()}
+
+            {/* Logo Crop Editor Modal */}
+            {showLogoCropEditor && heroData.heroLogo && (
+                <ImageCropEditor
+                    imageUrl={heroData.heroLogo}
+                    initialCrop={heroData.heroLogoSettings?.crop || getDefaultCropBounds()}
+                    onApply={(crop) => {
+                        updateField('heroLogoSettings', {
+                            ...heroData.heroLogoSettings,
+                            offsetX: heroData.heroLogoSettings?.offsetX || 0,
+                            offsetY: heroData.heroLogoSettings?.offsetY || 0,
+                            scale: heroData.heroLogoSettings?.scale || 1,
+                            crop,
+                        });
+                        setShowLogoCropEditor(false);
+                    }}
+                    onCancel={() => setShowLogoCropEditor(false)}
+                />
+            )}
 
             {/* Template Load Confirmation Modal */}
             {pendingTemplate && (

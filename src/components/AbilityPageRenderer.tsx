@@ -810,6 +810,45 @@ const AbilityPageRenderer = React.forwardRef<HTMLDivElement, AbilityPageRenderer
                 {/* Hero Logo - appears in top-left of banner, behind the hero */}
                 {heroData.heroLogo && (() => {
                     const logoSettings = heroData.heroLogoSettings || { offsetX: 0, offsetY: 0, scale: 1 };
+                    const logoCrop = logoSettings.crop;
+                    const hasLogoCrop = logoCrop && (logoCrop.top > 0 || logoCrop.left > 0 || logoCrop.right > 0 || logoCrop.bottom > 0);
+                    
+                    // Gradient mask for transparency fade (top-right full, bottom-left faded)
+                    // 225deg points toward bottom-left, so gradient goes from top-right to bottom-left
+                    const logoGradientStyle: React.CSSProperties = {
+                        maskImage: 'linear-gradient(225deg, rgba(0,0,0,1) 0%, rgba(0,0,0,0.5) 50%, rgba(0,0,0,0) 85%)',
+                        WebkitMaskImage: 'linear-gradient(225deg, rgba(0,0,0,1) 0%, rgba(0,0,0,0.5) 50%, rgba(0,0,0,0) 85%)',
+                    };
+                    
+                    // Calculate crop transform if crop is defined
+                    let logoCropStyle: React.CSSProperties | undefined;
+                    let logoWrapperStyle: React.CSSProperties | undefined;
+                    if (hasLogoCrop && logoCrop) {
+                        const visibleWidth = 100 - logoCrop.left - logoCrop.right;
+                        const visibleHeight = 100 - logoCrop.top - logoCrop.bottom;
+                        const scaleX = 100 / visibleWidth;
+                        const scaleY = 100 / visibleHeight;
+                        const cropScale = Math.min(scaleX, scaleY);
+                        const centerX = logoCrop.left + visibleWidth / 2;
+                        const centerY = logoCrop.top + visibleHeight / 2;
+                        
+                        logoWrapperStyle = {
+                            width: '100%',
+                            height: '100%',
+                            overflow: 'hidden',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            ...logoGradientStyle,
+                        };
+                        logoCropStyle = {
+                            width: '100%',
+                            height: '100%',
+                            objectFit: 'contain' as const,
+                            transform: `scale(${cropScale}) translate(${(50 - centerX)}%, ${(50 - centerY)}%)`,
+                        };
+                    }
+                    
                     return (
                         <div 
                             className="absolute z-[8] flex items-center justify-center"
@@ -822,11 +861,22 @@ const AbilityPageRenderer = React.forwardRef<HTMLDivElement, AbilityPageRenderer
                                 transformOrigin: 'top left',
                             }}
                         >
-                            <img 
-                                src={heroData.heroLogo}
-                                alt=""
-                                className="w-full h-full object-contain opacity-40"
-                            />
+                            {hasLogoCrop && logoWrapperStyle ? (
+                                <div style={logoWrapperStyle}>
+                                    <img 
+                                        src={heroData.heroLogo}
+                                        alt=""
+                                        style={{ ...logoCropStyle, opacity: 0.55 }}
+                                    />
+                                </div>
+                            ) : (
+                                <img 
+                                    src={heroData.heroLogo}
+                                    alt=""
+                                    className="w-full h-full object-contain"
+                                    style={{ ...logoGradientStyle, opacity: 0.55 }}
+                                />
+                            )}
                         </div>
                     );
                 })()}
