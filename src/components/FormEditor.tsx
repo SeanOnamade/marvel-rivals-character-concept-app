@@ -944,7 +944,7 @@ const FormEditor: React.FC<FormEditorProps> = ({ heroData, onChange, displaySett
                             <p className="text-xs text-gray-400">
                                 {displaySettings.customBackground ? 'Using custom background' : 'Using default Marvel Rivals background'}
                             </p>
-                            <div className="flex gap-2">
+                            <div className="flex gap-2 flex-wrap">
                                 <label className="flex items-center gap-2 px-3 py-1.5 bg-marvel-metal border border-marvel-border rounded text-sm hover:border-marvel-yellow transition-colors cursor-pointer">
                                     <Upload className="w-4 h-4" />
                                     <span>Upload Custom</span>
@@ -972,6 +972,17 @@ const FormEditor: React.FC<FormEditorProps> = ({ heroData, onChange, displaySett
                                         Use Default
                                     </button>
                                 )}
+                                {/* Flip Background Toggle */}
+                                <button
+                                    onClick={() => updateDisplaySetting('flipBackgroundHorizontally', !displaySettings.flipBackgroundHorizontally)}
+                                    className={`px-3 py-1.5 rounded text-sm transition-colors ${
+                                        displaySettings.flipBackgroundHorizontally
+                                            ? 'bg-marvel-yellow/20 border border-marvel-yellow text-marvel-yellow'
+                                            : 'bg-marvel-metal border border-marvel-border text-white hover:border-marvel-yellow'
+                                    }`}
+                                >
+                                    {displaySettings.flipBackgroundHorizontally ? '↔ Flipped' : '↔ Flip'}
+                                </button>
                             </div>
                             
                             {/* Background Gallery */}

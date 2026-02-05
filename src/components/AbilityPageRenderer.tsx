@@ -679,7 +679,7 @@ const AbilityPageRenderer = React.forwardRef<HTMLDivElement, AbilityPageRenderer
                             backgroundSize: 'cover',
                             backgroundPosition: 'center',
                             filter: 'blur(3px)',
-                            transform: 'scale(1.02)', // Prevent blur edge artifacts
+                            transform: `scale(1.02)${displaySettings.flipBackgroundHorizontally ? ' scaleX(-1)' : ''}`, // Prevent blur edge artifacts, optional flip
                         }}
                     />
                 )}

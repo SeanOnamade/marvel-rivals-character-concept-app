@@ -82,6 +82,7 @@ export interface DisplaySettings {
     currentPage: number; // Current page index (0 = main page)
     showBackground: boolean; // Show background image instead of black
     customBackground?: string; // Custom background image (data URL)
+    flipBackgroundHorizontally?: boolean; // Flip background image horizontally (default: false)
     foldSettings: FoldSettings; // Banner fold/edge settings
     useImageBanner: boolean; // Use image-based banner (true) or CSS-based (false)
     imageBannerSettings: ImageBannerSettings; // Position settings for image-based banner
