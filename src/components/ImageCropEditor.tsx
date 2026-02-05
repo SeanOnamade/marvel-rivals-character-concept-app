@@ -32,19 +32,31 @@ const ImageCropEditor: React.FC<ImageCropEditorProps> = ({
     const [startPos, setStartPos] = useState({ x: 0, y: 0 });
     const [startCrop, setStartCrop] = useState<CropBounds>(crop);
 
-    const handleMouseDown = useCallback((edge: string, e: React.MouseEvent) => {
-        e.preventDefault();
+    // Shared logic for starting drag (mouse or touch)
+    const startDrag = useCallback((edge: string, clientX: number, clientY: number) => {
         setDragging(edge);
-        setStartPos({ x: e.clientX, y: e.clientY });
+        setStartPos({ x: clientX, y: clientY });
         setStartCrop({ ...crop });
     }, [crop]);
 
-    const handleMouseMove = useCallback((e: MouseEvent) => {
+    const handleMouseDown = useCallback((edge: string, e: React.MouseEvent) => {
+        e.preventDefault();
+        startDrag(edge, e.clientX, e.clientY);
+    }, [startDrag]);
+
+    const handleTouchStart = useCallback((edge: string, e: React.TouchEvent) => {
+        e.preventDefault();
+        const touch = e.touches[0];
+        startDrag(edge, touch.clientX, touch.clientY);
+    }, [startDrag]);
+
+    // Shared logic for handling drag movement
+    const handleMove = useCallback((clientX: number, clientY: number) => {
         if (!dragging || !containerRef.current) return;
 
         const rect = containerRef.current.getBoundingClientRect();
-        const deltaX = ((e.clientX - startPos.x) / rect.width) * 100;
-        const deltaY = ((e.clientY - startPos.y) / rect.height) * 100;
+        const deltaX = ((clientX - startPos.x) / rect.width) * 100;
+        const deltaY = ((clientY - startPos.y) / rect.height) * 100;
 
         const newCrop = { ...startCrop };
 
@@ -82,20 +94,39 @@ const ImageCropEditor: React.FC<ImageCropEditorProps> = ({
         setCrop(newCrop);
     }, [dragging, startPos, startCrop]);
 
-    const handleMouseUp = useCallback(() => {
+    const handleMouseMove = useCallback((e: MouseEvent) => {
+        handleMove(e.clientX, e.clientY);
+    }, [handleMove]);
+
+    const handleTouchMove = useCallback((e: TouchEvent) => {
+        if (e.touches.length > 0) {
+            const touch = e.touches[0];
+            handleMove(touch.clientX, touch.clientY);
+        }
+    }, [handleMove]);
+
+    const handleEnd = useCallback(() => {
         setDragging(null);
     }, []);
 
     useEffect(() => {
         if (dragging) {
+            // Mouse events
             window.addEventListener('mousemove', handleMouseMove);
-            window.addEventListener('mouseup', handleMouseUp);
+            window.addEventListener('mouseup', handleEnd);
+            // Touch events
+            window.addEventListener('touchmove', handleTouchMove, { passive: false });
+            window.addEventListener('touchend', handleEnd);
+            window.addEventListener('touchcancel', handleEnd);
             return () => {
                 window.removeEventListener('mousemove', handleMouseMove);
-                window.removeEventListener('mouseup', handleMouseUp);
+                window.removeEventListener('mouseup', handleEnd);
+                window.removeEventListener('touchmove', handleTouchMove);
+                window.removeEventListener('touchend', handleEnd);
+                window.removeEventListener('touchcancel', handleEnd);
             };
         }
-    }, [dragging, handleMouseMove, handleMouseUp]);
+    }, [dragging, handleMouseMove, handleTouchMove, handleEnd]);
 
     const handleStyle = "absolute w-4 h-4 bg-white border-2 border-blue-500 rounded-full transform -translate-x-1/2 -translate-y-1/2 cursor-pointer z-20 hover:bg-blue-100";
     const edgeHandleStyle = "absolute bg-blue-500 z-20";
@@ -159,7 +190,7 @@ const ImageCropEditor: React.FC<ImageCropEditorProps> = ({
                     {/* Edge handles */}
                     {/* Top edge */}
                     <div 
-                        className={`${edgeHandleStyle} cursor-ns-resize`}
+                        className={`${edgeHandleStyle} cursor-ns-resize touch-none`}
                         style={{
                             top: `${crop.top}%`,
                             left: `${crop.left + 2}%`,
@@ -168,10 +199,11 @@ const ImageCropEditor: React.FC<ImageCropEditorProps> = ({
                             transform: 'translateY(-50%)',
                         }}
                         onMouseDown={(e) => handleMouseDown('top', e)}
+                        onTouchStart={(e) => handleTouchStart('top', e)}
                     />
                     {/* Bottom edge */}
                     <div 
-                        className={`${edgeHandleStyle} cursor-ns-resize`}
+                        className={`${edgeHandleStyle} cursor-ns-resize touch-none`}
                         style={{
                             bottom: `${crop.bottom}%`,
                             left: `${crop.left + 2}%`,
@@ -180,10 +212,11 @@ const ImageCropEditor: React.FC<ImageCropEditorProps> = ({
                             transform: 'translateY(50%)',
                         }}
                         onMouseDown={(e) => handleMouseDown('bottom', e)}
+                        onTouchStart={(e) => handleTouchStart('bottom', e)}
                     />
                     {/* Left edge */}
                     <div 
-                        className={`${edgeHandleStyle} cursor-ew-resize`}
+                        className={`${edgeHandleStyle} cursor-ew-resize touch-none`}
                         style={{
                             left: `${crop.left}%`,
                             top: `${crop.top + 2}%`,
@@ -192,10 +225,11 @@ const ImageCropEditor: React.FC<ImageCropEditorProps> = ({
                             transform: 'translateX(-50%)',
                         }}
                         onMouseDown={(e) => handleMouseDown('left', e)}
+                        onTouchStart={(e) => handleTouchStart('left', e)}
                     />
                     {/* Right edge */}
                     <div 
-                        className={`${edgeHandleStyle} cursor-ew-resize`}
+                        className={`${edgeHandleStyle} cursor-ew-resize touch-none`}
                         style={{
                             right: `${crop.right}%`,
                             top: `${crop.top + 2}%`,
@@ -204,28 +238,33 @@ const ImageCropEditor: React.FC<ImageCropEditorProps> = ({
                             transform: 'translateX(50%)',
                         }}
                         onMouseDown={(e) => handleMouseDown('right', e)}
+                        onTouchStart={(e) => handleTouchStart('right', e)}
                     />
 
                     {/* Corner handles */}
                     <div 
-                        className={handleStyle}
+                        className={`${handleStyle} touch-none`}
                         style={{ top: `${crop.top}%`, left: `${crop.left}%`, cursor: 'nwse-resize' }}
                         onMouseDown={(e) => handleMouseDown('top-left', e)}
+                        onTouchStart={(e) => handleTouchStart('top-left', e)}
                     />
                     <div 
-                        className={handleStyle}
+                        className={`${handleStyle} touch-none`}
                         style={{ top: `${crop.top}%`, right: `${crop.right}%`, left: 'auto', transform: 'translate(50%, -50%)', cursor: 'nesw-resize' }}
                         onMouseDown={(e) => handleMouseDown('top-right', e)}
+                        onTouchStart={(e) => handleTouchStart('top-right', e)}
                     />
                     <div 
-                        className={handleStyle}
+                        className={`${handleStyle} touch-none`}
                         style={{ bottom: `${crop.bottom}%`, left: `${crop.left}%`, top: 'auto', transform: 'translate(-50%, 50%)', cursor: 'nesw-resize' }}
                         onMouseDown={(e) => handleMouseDown('bottom-left', e)}
+                        onTouchStart={(e) => handleTouchStart('bottom-left', e)}
                     />
                     <div 
-                        className={handleStyle}
+                        className={`${handleStyle} touch-none`}
                         style={{ bottom: `${crop.bottom}%`, right: `${crop.right}%`, top: 'auto', left: 'auto', transform: 'translate(50%, 50%)', cursor: 'nwse-resize' }}
                         onMouseDown={(e) => handleMouseDown('bottom-right', e)}
+                        onTouchStart={(e) => handleTouchStart('bottom-right', e)}
                     />
                 </div>
                 </div>

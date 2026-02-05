@@ -181,6 +181,7 @@ type EditorTab = 'appearance' | 'moveset' | 'pages';
 const FormEditor: React.FC<FormEditorProps> = ({ heroData, onChange, displaySettings, onDisplaySettingsChange, onBatchChange, rendererRef, previewScale, onPreviewScaleChange }) => {
     const [activeTab, setActiveTab] = useState<EditorTab>('appearance');
     const [showCropEditor, setShowCropEditor] = useState(false);
+    const [characterCropEditorId, setCharacterCropEditorId] = useState<string | null>(null); // Team-up ID for character crop editor
     const [foldExpanded, setFoldExpanded] = useState(false);
     const [heroImageExpanded, setHeroImageExpanded] = useState(false);
     const [heroNameExpanded, setHeroNameExpanded] = useState(false);
@@ -569,6 +570,54 @@ const FormEditor: React.FC<FormEditorProps> = ({ heroData, onChange, displaySett
         onChange({ ...heroData, teamUpAbilities: newTeamUps });
     };
 
+    // Character image handlers for team-ups
+    const updateCharacterImageCrop = (teamUpId: string, crop: CropBounds) => {
+        const newTeamUps = heroData.teamUpAbilities.map(tu => {
+            if (tu.id === teamUpId) {
+                return { ...tu, characterImageCrop: crop };
+            }
+            return tu;
+        });
+        onChange({ ...heroData, teamUpAbilities: newTeamUps });
+        setCharacterCropEditorId(null);
+    };
+
+    const uploadCharacterImage = (teamUpId: string, dataUrl: string) => {
+        const newTeamUps = heroData.teamUpAbilities.map(tu => {
+            if (tu.id === teamUpId) {
+                return { 
+                    ...tu, 
+                    characterImage: dataUrl, 
+                    characterImageUseCustom: true,
+                    characterImageCrop: getDefaultCropBounds() // Reset crop for new image
+                };
+            }
+            return tu;
+        });
+        onChange({ ...heroData, teamUpAbilities: newTeamUps });
+    };
+
+    const clearCharacterImage = (teamUpId: string) => {
+        const newTeamUps = heroData.teamUpAbilities.map(tu => {
+            if (tu.id === teamUpId) {
+                return { 
+                    ...tu, 
+                    characterImage: undefined, 
+                    characterImageUseCustom: false,
+                    characterImageCrop: heroData.portraitSettings?.crop // Reset to hero's crop
+                };
+            }
+            return tu;
+        });
+        onChange({ ...heroData, teamUpAbilities: newTeamUps });
+    };
+
+    // Get the current team-up being edited for crop
+    const getTeamUpForCrop = () => {
+        if (!characterCropEditorId) return null;
+        return heroData.teamUpAbilities.find(tu => tu.id === characterCropEditorId);
+    };
+
     // Ability handlers
     const updateAbility = (id: string, field: keyof Ability, value: string | number | boolean) => {
         const newAbilities = heroData.abilities.map(ability =>
@@ -609,17 +658,6 @@ const FormEditor: React.FC<FormEditorProps> = ({ heroData, onChange, displaySett
     // Ultimate handlers
     const updateUltimate = (field: keyof Ability, value: string | number | boolean) => {
         onChange({ ...heroData, ultimate: { ...heroData.ultimate, [field]: value } });
-    };
-
-    // Team-up anchor handlers
-    const updateTeamUpAnchor = (enabled: boolean, bonusText?: string) => {
-        onChange({ 
-            ...heroData, 
-            teamUpAnchor: { 
-                enabled, 
-                bonusText: bonusText ?? heroData.teamUpAnchor?.bonusText ?? '+5% Healing Bonus' 
-            } 
-        });
     };
 
     // Additional pages handlers
@@ -1072,138 +1110,6 @@ const FormEditor: React.FC<FormEditorProps> = ({ heroData, onChange, displaySett
                         className="w-full bg-marvel-dark border border-marvel-border rounded px-3 py-2 text-white focus:border-marvel-yellow focus:outline-none"
                         placeholder="Enter hero name"
                     />
-                </div>
-
-                {/* Hero Logo Upload */}
-                <div className="mb-4">
-                    <label className="block text-sm font-medium mb-2">Hero Logo (optional)</label>
-                    <div className="flex items-center gap-3">
-                        {heroData.heroLogo ? (
-                            <div className="w-16 h-16 border border-marvel-border rounded bg-marvel-dark overflow-hidden">
-                                <img src={heroData.heroLogo} alt="Hero Logo" className="w-full h-full object-contain" />
-                            </div>
-                        ) : (
-                            <div className="w-16 h-16 border border-marvel-border rounded bg-marvel-dark flex items-center justify-center">
-                                <span className="text-xs text-gray-500">No logo</span>
-                            </div>
-                        )}
-                        <div className="flex flex-col gap-2">
-                            <label className="flex items-center gap-2 px-3 py-1.5 bg-marvel-metal border border-marvel-border rounded text-sm hover:border-marvel-yellow transition-colors cursor-pointer min-h-[44px]">
-                                <Upload className="w-4 h-4" />
-                                <span>Upload Logo</span>
-                                <input
-                                    type="file"
-                                    accept="image/png,image/jpeg,image/jpg,image/gif,image/webp,image/*"
-                                    multiple={false}
-                                    className="hidden"
-                                    onChange={(e) => {
-                                        const file = e.target.files?.[0];
-                                        if (file) {
-                                            const reader = new FileReader();
-                                            reader.onload = (event) => {
-                                                updateField('heroLogo', event.target?.result as string);
-                                            };
-                                            reader.readAsDataURL(file);
-                                        }
-                                    }}
-                                />
-                            </label>
-                            {heroData.heroLogo && (
-                                <>
-                                    <button
-                                        onClick={handleRemoveLogoBg}
-                                        disabled={isRemovingLogoBg}
-                                        className="flex items-center gap-1 px-2 py-1 bg-purple-600 text-white rounded text-xs hover:bg-purple-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                                    >
-                                        {isRemovingLogoBg ? (
-                                            <>
-                                                <Loader2 className="w-3 h-3 animate-spin" />
-                                                Processing...
-                                            </>
-                                        ) : (
-                                            <>
-                                                <Wand2 className="w-3 h-3" />
-                                                Remove BG
-                                            </>
-                                        )}
-                                    </button>
-                                    <button
-                                        onClick={() => updateField('heroLogo', undefined)}
-                                        className="text-xs text-red-400 hover:text-red-300"
-                                    >
-                                        Remove logo
-                                    </button>
-                                </>
-                            )}
-                        </div>
-                    </div>
-                    {logoBgRemovalError && (
-                        <p className="text-xs text-red-400 mt-1">{logoBgRemovalError}</p>
-                    )}
-                    <p className="text-xs text-gray-500 mt-1">Appears behind hero in top-left of banner</p>
-                    
-                    {/* Logo Position Controls - Collapsible */}
-                    {heroData.heroLogo && (
-                        <details className="mt-3 group">
-                            <summary className="text-xs text-marvel-yellow font-bold cursor-pointer hover:text-marvel-accent p-2 bg-marvel-dark rounded border border-marvel-border flex items-center gap-2">
-                                <ChevronRight className="w-3 h-3 transition-transform group-open:rotate-90" />
-                                Logo Position
-                            </summary>
-                            <div className="space-y-3 p-3 bg-marvel-dark rounded-b border border-t-0 border-marvel-border">
-                                <div>
-                                    <label className="text-xs text-gray-400">X: {heroData.heroLogoSettings?.offsetX || 0}px</label>
-                                    <input
-                                        type="range"
-                                        min="-100"
-                                        max="100"
-                                        value={heroData.heroLogoSettings?.offsetX || 0}
-                                        onChange={(e) => updateField('heroLogoSettings', {
-                                            ...heroData.heroLogoSettings,
-                                            offsetX: parseInt(e.target.value),
-                                            offsetY: heroData.heroLogoSettings?.offsetY || 0,
-                                            scale: heroData.heroLogoSettings?.scale || 1,
-                                        })}
-                                        className="w-full"
-                                    />
-                                </div>
-                                
-                                <div>
-                                    <label className="text-xs text-gray-400">Y: {heroData.heroLogoSettings?.offsetY || 0}px</label>
-                                    <input
-                                        type="range"
-                                        min="-100"
-                                        max="100"
-                                        value={heroData.heroLogoSettings?.offsetY || 0}
-                                        onChange={(e) => updateField('heroLogoSettings', {
-                                            ...heroData.heroLogoSettings,
-                                            offsetX: heroData.heroLogoSettings?.offsetX || 0,
-                                            offsetY: parseInt(e.target.value),
-                                            scale: heroData.heroLogoSettings?.scale || 1,
-                                        })}
-                                        className="w-full"
-                                    />
-                                </div>
-                                
-                                <div>
-                                    <label className="text-xs text-gray-400">Scale: {heroData.heroLogoSettings?.scale || 1}x</label>
-                                    <input
-                                        type="range"
-                                        min="0.5"
-                                        max="2"
-                                        step="0.1"
-                                        value={heroData.heroLogoSettings?.scale || 1}
-                                        onChange={(e) => updateField('heroLogoSettings', {
-                                            ...heroData.heroLogoSettings,
-                                            offsetX: heroData.heroLogoSettings?.offsetX || 0,
-                                            offsetY: heroData.heroLogoSettings?.offsetY || 0,
-                                            scale: parseFloat(e.target.value),
-                                        })}
-                                        className="w-full"
-                                    />
-                                </div>
-                            </div>
-                        </details>
-                    )}
                 </div>
 
                 <div className="mb-4">
@@ -1676,6 +1582,138 @@ const FormEditor: React.FC<FormEditorProps> = ({ heroData, onChange, displaySett
                         </div>
                     )}
                 </div>
+
+                {/* Hero Logo Upload */}
+                <div className="mb-4 p-3 bg-marvel-dark/50 rounded border border-marvel-border">
+                    <label className="block text-sm font-medium mb-2">Hero Logo (optional)</label>
+                    <div className="flex items-center gap-3">
+                        {heroData.heroLogo ? (
+                            <div className="w-16 h-16 border border-marvel-border rounded bg-marvel-dark overflow-hidden">
+                                <img src={heroData.heroLogo} alt="Hero Logo" className="w-full h-full object-contain" />
+                            </div>
+                        ) : (
+                            <div className="w-16 h-16 border border-marvel-border rounded bg-marvel-dark flex items-center justify-center">
+                                <span className="text-xs text-gray-500">No logo</span>
+                            </div>
+                        )}
+                        <div className="flex flex-col gap-2">
+                            <label className="flex items-center gap-2 px-3 py-1.5 bg-marvel-metal border border-marvel-border rounded text-sm hover:border-marvel-yellow transition-colors cursor-pointer min-h-[44px]">
+                                <Upload className="w-4 h-4" />
+                                <span>Upload Logo</span>
+                                <input
+                                    type="file"
+                                    accept="image/png,image/jpeg,image/jpg,image/gif,image/webp,image/*"
+                                    multiple={false}
+                                    className="hidden"
+                                    onChange={(e) => {
+                                        const file = e.target.files?.[0];
+                                        if (file) {
+                                            const reader = new FileReader();
+                                            reader.onload = (event) => {
+                                                updateField('heroLogo', event.target?.result as string);
+                                            };
+                                            reader.readAsDataURL(file);
+                                        }
+                                    }}
+                                />
+                            </label>
+                            {heroData.heroLogo && (
+                                <>
+                                    <button
+                                        onClick={handleRemoveLogoBg}
+                                        disabled={isRemovingLogoBg}
+                                        className="flex items-center gap-1 px-2 py-1 bg-purple-600 text-white rounded text-xs hover:bg-purple-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        {isRemovingLogoBg ? (
+                                            <>
+                                                <Loader2 className="w-3 h-3 animate-spin" />
+                                                Processing...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Wand2 className="w-3 h-3" />
+                                                Remove BG
+                                            </>
+                                        )}
+                                    </button>
+                                    <button
+                                        onClick={() => updateField('heroLogo', undefined)}
+                                        className="text-xs text-red-400 hover:text-red-300"
+                                    >
+                                        Remove logo
+                                    </button>
+                                </>
+                            )}
+                        </div>
+                    </div>
+                    {logoBgRemovalError && (
+                        <p className="text-xs text-red-400 mt-1">{logoBgRemovalError}</p>
+                    )}
+                    <p className="text-xs text-gray-500 mt-1">Appears behind hero in top-left of banner</p>
+                    
+                    {/* Logo Position Controls - Collapsible */}
+                    {heroData.heroLogo && (
+                        <details className="mt-3 group">
+                            <summary className="text-xs text-marvel-yellow font-bold cursor-pointer hover:text-marvel-accent p-2 bg-marvel-dark rounded border border-marvel-border flex items-center gap-2">
+                                <ChevronRight className="w-3 h-3 transition-transform group-open:rotate-90" />
+                                Logo Position
+                            </summary>
+                            <div className="space-y-3 p-3 bg-marvel-dark rounded-b border border-t-0 border-marvel-border">
+                                <div>
+                                    <label className="text-xs text-gray-400">X: {heroData.heroLogoSettings?.offsetX || 0}px</label>
+                                    <input
+                                        type="range"
+                                        min="-100"
+                                        max="100"
+                                        value={heroData.heroLogoSettings?.offsetX || 0}
+                                        onChange={(e) => updateField('heroLogoSettings', {
+                                            ...heroData.heroLogoSettings,
+                                            offsetX: parseInt(e.target.value),
+                                            offsetY: heroData.heroLogoSettings?.offsetY || 0,
+                                            scale: heroData.heroLogoSettings?.scale || 1,
+                                        })}
+                                        className="w-full"
+                                    />
+                                </div>
+                                
+                                <div>
+                                    <label className="text-xs text-gray-400">Y: {heroData.heroLogoSettings?.offsetY || 0}px</label>
+                                    <input
+                                        type="range"
+                                        min="-100"
+                                        max="100"
+                                        value={heroData.heroLogoSettings?.offsetY || 0}
+                                        onChange={(e) => updateField('heroLogoSettings', {
+                                            ...heroData.heroLogoSettings,
+                                            offsetX: heroData.heroLogoSettings?.offsetX || 0,
+                                            offsetY: parseInt(e.target.value),
+                                            scale: heroData.heroLogoSettings?.scale || 1,
+                                        })}
+                                        className="w-full"
+                                    />
+                                </div>
+                                
+                                <div>
+                                    <label className="text-xs text-gray-400">Scale: {heroData.heroLogoSettings?.scale || 1}x</label>
+                                    <input
+                                        type="range"
+                                        min="0.5"
+                                        max="2"
+                                        step="0.1"
+                                        value={heroData.heroLogoSettings?.scale || 1}
+                                        onChange={(e) => updateField('heroLogoSettings', {
+                                            ...heroData.heroLogoSettings,
+                                            offsetX: heroData.heroLogoSettings?.offsetX || 0,
+                                            offsetY: heroData.heroLogoSettings?.offsetY || 0,
+                                            scale: parseFloat(e.target.value),
+                                        })}
+                                        className="w-full"
+                                    />
+                                </div>
+                            </div>
+                        </details>
+                    )}
+                </div>
             </CollapsibleSection>
             </>
             )}
@@ -1848,9 +1886,6 @@ const FormEditor: React.FC<FormEditorProps> = ({ heroData, onChange, displaySett
                             <summary className="text-xs text-marvel-yellow font-bold cursor-pointer hover:text-marvel-accent flex items-center gap-2 list-none">
                                 <ChevronRight className="w-3 h-3 transition-transform group-open:rotate-90" />
                                 Team-Up Heroes
-                                <span className="text-gray-500 font-normal">
-                                    ({teamUp.isAnchor === false && teamUp.anchorIcon ? '1 anchor' : ''}{teamUp.isAnchor === false && teamUp.anchorIcon && teamUp.partnerIcons?.length ? ', ' : ''}{teamUp.partnerIcons?.length ? `${teamUp.partnerIcons.length} partner${teamUp.partnerIcons.length > 1 ? 's' : ''}` : ''})
-                                </span>
                             </summary>
                             <div className="mt-2 space-y-3">
                                 {/* Anchor Selection (when hero is not anchor) */}
@@ -1890,6 +1925,116 @@ const FormEditor: React.FC<FormEditorProps> = ({ heroData, onChange, displaySett
                                         </div>
                                     </div>
                                 )}
+
+                                {/* Character Image (for your hero in the team-up) */}
+                                <div className="p-2 bg-marvel-metal rounded">
+                                        <div className="flex items-center justify-between mb-2">
+                                            <span className="text-xs text-blue-400 font-bold">YOUR CHARACTER:</span>
+                                            {teamUp.characterImageUseCustom && teamUp.characterImage && (
+                                                <button 
+                                                    onClick={() => clearCharacterImage(teamUp.id)}
+                                                    className="text-xs text-gray-500 hover:text-red-400 transition-colors"
+                                                >
+                                                    Use Hero Image
+                                                </button>
+                                            )}
+                                        </div>
+                                        <div className="flex items-start gap-3">
+                                            {/* Preview of current character image */}
+                                            <div className="relative">
+                                                <div className="w-12 h-12 rounded overflow-hidden border-2 border-blue-500 bg-marvel-dark relative">
+                                                    {(() => {
+                                                        const imageUrl = teamUp.characterImageUseCustom && teamUp.characterImage
+                                                            ? teamUp.characterImage
+                                                            : heroData.portraitImage;
+                                                        const cropBounds = teamUp.characterImageUseCustom && teamUp.characterImage
+                                                            ? teamUp.characterImageCrop
+                                                            : (teamUp.characterImageCrop || heroData.portraitSettings?.crop);
+                                                        
+                                                        if (!imageUrl) {
+                                                            return <div className="w-full h-full bg-gradient-to-br from-gray-600/30 to-transparent" />;
+                                                        }
+                                                        
+                                                        // Apply cropping similar to PartnerIcon
+                                                        const hasCrop = cropBounds && (cropBounds.top > 0 || cropBounds.left > 0 || cropBounds.right > 0 || cropBounds.bottom > 0);
+                                                        
+                                                        if (hasCrop && cropBounds) {
+                                                            const visibleWidth = 100 - cropBounds.left - cropBounds.right;
+                                                            const visibleHeight = 100 - cropBounds.top - cropBounds.bottom;
+                                                            const scale = Math.max(100 / visibleWidth, 100 / visibleHeight);
+                                                            const centerX = cropBounds.left + visibleWidth / 2;
+                                                            const centerY = cropBounds.top + visibleHeight / 2;
+                                                            
+                                                            return (
+                                                                <div style={{
+                                                                    position: 'absolute',
+                                                                    width: `${scale * 100}%`,
+                                                                    height: `${scale * 100}%`,
+                                                                    left: `${50 - centerX * scale}%`,
+                                                                    top: `${50 - centerY * scale}%`,
+                                                                }}>
+                                                                    <img src={imageUrl} alt="" style={{
+                                                                        width: '100%',
+                                                                        height: '100%',
+                                                                        objectFit: 'contain',
+                                                                        objectPosition: 'center',
+                                                                    }} />
+                                                                </div>
+                                                            );
+                                                        }
+                                                        
+                                                        return <img src={imageUrl} alt="" className="w-full h-full object-cover" />;
+                                                    })()}
+                                                </div>
+                                            </div>
+                                            
+                                            {/* Actions */}
+                                            <div className="flex-1 space-y-1">
+                                                <p className="text-[10px] text-gray-500">
+                                                    {teamUp.characterImageUseCustom && teamUp.characterImage 
+                                                        ? 'Using custom image' 
+                                                        : 'Using hero image (cropped)'}
+                                                    {' · '}
+                                                    {teamUp.isAnchor !== false 
+                                                        ? 'Shows first (anchor)' 
+                                                        : 'Shows after anchor'}
+                                                </p>
+                                                <div className="flex gap-2">
+                                                    {/* Crop button */}
+                                                    <button
+                                                        onClick={() => setCharacterCropEditorId(teamUp.id)}
+                                                        disabled={!heroData.portraitImage && !teamUp.characterImage}
+                                                        className="flex items-center gap-1 px-2 py-1 text-xs bg-marvel-dark border border-marvel-border rounded hover:border-blue-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                                    >
+                                                        <Crop className="w-3 h-3" />
+                                                        Adjust Crop
+                                                    </button>
+                                                    
+                                                    {/* Upload custom image button */}
+                                                    <label className="flex items-center gap-1 px-2 py-1 text-xs bg-marvel-dark border border-marvel-border rounded hover:border-marvel-yellow cursor-pointer transition-colors">
+                                                        <Upload className="w-3 h-3" />
+                                                        Upload New
+                                                        <input 
+                                                            type="file" 
+                                                            accept="image/*" 
+                                                            className="hidden"
+                                                            onChange={(e) => {
+                                                                const file = e.target.files?.[0];
+                                                                if (file) {
+                                                                    const reader = new FileReader();
+                                                                    reader.onload = (event) => {
+                                                                        uploadCharacterImage(teamUp.id, event.target?.result as string);
+                                                                    };
+                                                                    reader.readAsDataURL(file);
+                                                                }
+                                                                e.target.value = '';
+                                                            }}
+                                                        />
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
 
                                 {/* Partners Selection */}
                                 <div className="p-2 bg-marvel-metal rounded">
@@ -2129,28 +2274,6 @@ const FormEditor: React.FC<FormEditorProps> = ({ heroData, onChange, displaySett
                     </div>
                 ))}
             </CollapsibleSection>
-
-            {/* Team-Up Anchor */}
-            <CollapsibleSection title="Team-Up Anchor" defaultOpen={false} className="mb-6 bg-marvel-dark rounded-lg border border-marvel-border">
-                <label className="flex items-center gap-3 cursor-pointer mb-3">
-                    <input
-                        type="checkbox"
-                        checked={heroData.teamUpAnchor?.enabled || false}
-                        onChange={(e) => updateTeamUpAnchor(e.target.checked)}
-                        className="w-5 h-5 rounded"
-                    />
-                    <span className="text-sm">Enable Team-Up Anchor Display</span>
-                </label>
-                {heroData.teamUpAnchor?.enabled && (
-                    <input
-                        type="text"
-                        value={heroData.teamUpAnchor.bonusText}
-                        onChange={(e) => updateTeamUpAnchor(true, e.target.value)}
-                        placeholder="e.g., +5% Healing Bonus"
-                        className="w-full bg-marvel-metal border border-marvel-border rounded px-3 py-2 text-white text-sm"
-                    />
-                )}
-            </CollapsibleSection>
             </>
             )}
 
@@ -2242,6 +2365,32 @@ const FormEditor: React.FC<FormEditorProps> = ({ heroData, onChange, displaySett
                     onCancel={() => setShowCropEditor(false)}
                 />
             )}
+
+            {/* Character Image Crop Editor Modal (for team-ups) */}
+            {characterCropEditorId && (() => {
+                const teamUp = getTeamUpForCrop();
+                if (!teamUp) return null;
+                
+                // Determine which image and initial crop to use
+                const imageUrl = teamUp.characterImageUseCustom && teamUp.characterImage
+                    ? teamUp.characterImage
+                    : heroData.portraitImage;
+                    
+                const initialCrop = teamUp.characterImageUseCustom && teamUp.characterImage
+                    ? (teamUp.characterImageCrop || getDefaultCropBounds())
+                    : (teamUp.characterImageCrop || heroData.portraitSettings?.crop || getDefaultCropBounds());
+                
+                if (!imageUrl) return null;
+                
+                return (
+                    <ImageCropEditor
+                        imageUrl={imageUrl}
+                        initialCrop={initialCrop}
+                        onApply={(crop) => updateCharacterImageCrop(teamUp.id, crop)}
+                        onCancel={() => setCharacterCropEditorId(null)}
+                    />
+                );
+            })()}
 
             {/* Template Load Confirmation Modal */}
             {pendingTemplate && (

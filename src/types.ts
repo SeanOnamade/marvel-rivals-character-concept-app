@@ -45,6 +45,10 @@ export interface TeamUpAbility {
     isAnchor?: boolean; // true = hero is anchor, false = hero is secondary (default: true)
     anchorIcon?: string; // Icon for the anchor hero (if current hero is not anchor)
     partnerIcons?: string[]; // Icons for team-up partners (other heroes in the team-up)
+    // Character image settings (when hero is anchor)
+    characterImageUseCustom?: boolean; // true = use custom image, false/undefined = use hero portrait (cropped)
+    characterImage?: string; // Custom character image (only used if characterImageUseCustom is true)
+    characterImageCrop?: CropBounds; // Crop for the character image (defaults to hero's crop when using hero image)
 }
 
 // A content page (like "Healing Hearts", "Breaking Spades" for Gambit)
@@ -421,7 +425,13 @@ export const getDoctorStrangePreset = (): HeroData => ({
             icon: '/icons/teamup-gammamaelstrom.png',
             isAnchor: false,
             anchorIcon: '/hero-icons/hulk_avatar.png',
-            partnerIcons: ['/hero-icons/doctor-strange_avatar.png', '/hero-icons/iron-man_avatar.png'],
+            partnerIcons: ['/hero-icons/iron-man_avatar.png'],
+            characterImageCrop: {
+                top: 10.14,
+                left: 51.62,
+                right: 38.38,
+                bottom: 77.07,
+            },
         },
     ],
     abilities: [
@@ -545,6 +555,12 @@ export const getSpotPreset = (): HeroData => ({
             isAnchor: true,
             partnerIcons: ['/hero-icons/spider-man_avatar.png'],
             icon: '/icons/teamup-gammamaelstrom.png',
+            characterImageCrop: {
+                top: 8,
+                left: 37,
+                right: 34,
+                bottom: 65,
+            },
         },
     ],
     abilities: [
@@ -677,7 +693,6 @@ export const HERO_ICONS: { name: string; path: string }[] = [
     { name: 'Star-Lord', path: '/hero-icons/star-lord_avatar.png' },
     { name: 'Storm', path: '/hero-icons/storm_avatar.png' },
     { name: 'The Punisher', path: '/hero-icons/the-punisher_avatar.png' },
-    { name: 'The Spot', path: '/hero-icons/the-spot_avatar.png' },
     { name: 'The Thing', path: '/hero-icons/the-thing_avatar.png' },
     { name: 'Thor', path: '/hero-icons/thor_avatar.png' },
     { name: 'Ultron', path: '/hero-icons/ultron_avatar.png' },

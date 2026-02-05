@@ -246,16 +246,61 @@ const HotkeyLabel: React.FC<HotkeyLabelProps> = ({ hotkey, glow = false }) => {
     );
 };
 
-// Small partner icon (for team-ups)
-interface PartnerIconProps {
-    icon?: string;
+// Crop bounds interface
+interface CropBounds {
+    top: number;
+    left: number;
+    right: number;
+    bottom: number;
 }
 
-const PartnerIcon: React.FC<PartnerIconProps> = ({ icon }) => {
+// Small partner icon (for team-ups) with optional cropping
+interface PartnerIconProps {
+    icon?: string;
+    crop?: CropBounds;
+}
+
+const PartnerIcon: React.FC<PartnerIconProps> = ({ icon, crop }) => {
+    // Check if we have meaningful crop values
+    const hasCrop = crop && (crop.top > 0 || crop.left > 0 || crop.right > 0 || crop.bottom > 0);
+    
+    // Calculate crop styles similar to HeroPortrait
+    let cropWrapperStyle: React.CSSProperties | undefined;
+    let croppedImageStyle: React.CSSProperties | undefined;
+    
+    if (hasCrop && crop) {
+        const visibleWidth = 100 - crop.left - crop.right;
+        const visibleHeight = 100 - crop.top - crop.bottom;
+        const scale = Math.max(100 / visibleWidth, 100 / visibleHeight);
+        const centerX = crop.left + visibleWidth / 2;
+        const centerY = crop.top + visibleHeight / 2;
+        
+        cropWrapperStyle = {
+            position: 'absolute',
+            width: `${scale * 100}%`,
+            height: `${scale * 100}%`,
+            left: `${50 - centerX * scale}%`,
+            top: `${50 - centerY * scale}%`,
+        };
+        
+        croppedImageStyle = {
+            width: '100%',
+            height: '100%',
+            objectFit: 'contain',
+            objectPosition: 'center',
+        };
+    }
+
     return (
-        <div className="w-8 h-8 rounded-sm overflow-hidden border border-gray-600 bg-[#1a1a1a]">
+        <div className="w-8 h-8 rounded-sm overflow-hidden border border-gray-600 bg-[#1a1a1a] relative">
             {icon ? (
-                <img src={icon} alt="" className="w-full h-full object-cover" />
+                hasCrop && cropWrapperStyle && croppedImageStyle ? (
+                    <div style={cropWrapperStyle}>
+                        <img src={icon} alt="" style={croppedImageStyle} />
+                    </div>
+                ) : (
+                    <img src={icon} alt="" className="w-full h-full object-cover" />
+                )
             ) : (
                 <div className="w-full h-full bg-gradient-to-br from-gray-600/30 to-transparent" />
             )}
@@ -419,7 +464,17 @@ const AbilityPageRenderer = React.forwardRef<HTMLDivElement, AbilityPageRenderer
                                                 {teamUp.isAnchor !== false ? (
                                                     <>
                                                         {/* Hero is anchor - show first */}
-                                                        <PartnerIcon icon={heroData.portraitImage} />
+                                                        {/* Use custom character image if set, otherwise use hero portrait with cropping */}
+                                                        <PartnerIcon 
+                                                            icon={teamUp.characterImageUseCustom && teamUp.characterImage 
+                                                                ? teamUp.characterImage 
+                                                                : heroData.portraitImage
+                                                            } 
+                                                            crop={teamUp.characterImageUseCustom && teamUp.characterImage
+                                                                ? teamUp.characterImageCrop
+                                                                : (teamUp.characterImageCrop || heroData.portraitSettings?.crop)
+                                                            }
+                                                        />
                                                         {/* Divider */}
                                                         {teamUp.partnerIcons && teamUp.partnerIcons.length > 0 && (
                                                             <div className="w-px h-6 bg-gray-500 mx-1"></div>
@@ -431,14 +486,25 @@ const AbilityPageRenderer = React.forwardRef<HTMLDivElement, AbilityPageRenderer
                                                     </>
                                                 ) : (
                                                     <>
-                                                        {/* Hero is secondary - show anchor icon first, then divider, then partners */}
+                                                        {/* Hero is secondary - show anchor icon first, then divider, then hero (cropped), then partners */}
                                                         {teamUp.anchorIcon && (
                                                             <>
                                                                 <PartnerIcon icon={teamUp.anchorIcon} />
                                                                 <div className="w-px h-6 bg-gray-500 mx-1"></div>
                                                             </>
                                                         )}
-                                                        {/* Partner icons (including current hero) */}
+                                                        {/* Hero's character image (cropped or custom) */}
+                                                        <PartnerIcon 
+                                                            icon={teamUp.characterImageUseCustom && teamUp.characterImage 
+                                                                ? teamUp.characterImage 
+                                                                : heroData.portraitImage
+                                                            } 
+                                                            crop={teamUp.characterImageUseCustom && teamUp.characterImage
+                                                                ? teamUp.characterImageCrop
+                                                                : (teamUp.characterImageCrop || heroData.portraitSettings?.crop)
+                                                            }
+                                                        />
+                                                        {/* Other partner icons */}
                                                         {teamUp.partnerIcons?.map((icon, idx) => (
                                                             <PartnerIcon key={idx} icon={icon} />
                                                         ))}
