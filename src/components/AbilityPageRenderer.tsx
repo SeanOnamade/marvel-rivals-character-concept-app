@@ -104,10 +104,11 @@ interface IconProps {
     iconScale?: number; // Scale for the icon image (0.5 to 2, default 1)
     size?: 'sm' | 'md' | 'lg';
     glow?: boolean;
+    breakout?: boolean; // If true, icon breaks out of container with higher z-index
 }
 
 // Diamond-shaped icon for abilities (rotated 45 degrees)
-const AbilityIcon: React.FC<IconProps> = ({ icon, iconScale = 1, size = 'md', glow = false }) => {
+const AbilityIcon: React.FC<IconProps> = ({ icon, iconScale = 1, size = 'md', glow = false, breakout = false }) => {
     const sizeClasses = {
         sm: 'w-8 h-8',
         md: 'w-10 h-10',
@@ -116,14 +117,15 @@ const AbilityIcon: React.FC<IconProps> = ({ icon, iconScale = 1, size = 'md', gl
 
     const glowStyle = glow ? { boxShadow: '0 0 20px rgba(255,200,0,0.6)' } : {};
     const baseScale = 1.4 * iconScale;
+    const breakoutStyle = breakout ? { zIndex: 10, overflow: 'visible' as const } : {};
 
     return (
         <div 
-            className={`${sizeClasses[size]} bg-[#1a1a1a] border border-yellow-500/60 flex-shrink-0 overflow-hidden rotate-45`}
-            style={glowStyle}
+            className={`${sizeClasses[size]} bg-[#1a1a1a] border border-yellow-500/60 flex-shrink-0 ${breakout ? '' : 'overflow-hidden'} rotate-45`}
+            style={{ ...glowStyle, ...breakoutStyle }}
         >
             {icon ? (
-                <div className="w-full h-full -rotate-45 flex items-center justify-center">
+                <div className={`w-full h-full -rotate-45 flex items-center justify-center ${breakout ? 'overflow-visible' : ''}`}>
                     <img 
                         src={icon} 
                         alt="" 
@@ -143,7 +145,7 @@ const AbilityIcon: React.FC<IconProps> = ({ icon, iconScale = 1, size = 'md', gl
 };
 
 // Rectangle-shaped icon for attacks (no rotation) - wider than abilities
-const AttackIcon: React.FC<IconProps> = ({ icon, iconScale = 1, size = 'md', glow = false }) => {
+const AttackIcon: React.FC<IconProps> = ({ icon, iconScale = 1, size = 'md', glow = false, breakout = false }) => {
     const sizeClasses = {
         sm: 'w-20 h-8',
         md: 'w-24 h-10',
@@ -151,11 +153,12 @@ const AttackIcon: React.FC<IconProps> = ({ icon, iconScale = 1, size = 'md', glo
     };
 
     const glowStyle = glow ? { boxShadow: '0 0 20px rgba(255,200,0,0.6)' } : {};
+    const breakoutStyle = breakout ? { zIndex: 10, overflow: 'visible' as const } : {};
 
     return (
         <div 
-            className={`${sizeClasses[size]} bg-[#1a1a1a] border border-yellow-500/60 flex-shrink-0 overflow-hidden flex items-center justify-center`}
-            style={glowStyle}
+            className={`${sizeClasses[size]} bg-[#1a1a1a] border border-yellow-500/60 flex-shrink-0 ${breakout ? '' : 'overflow-hidden'} flex items-center justify-center`}
+            style={{ ...glowStyle, ...breakoutStyle }}
         >
             {icon ? (
                 <img 
@@ -176,7 +179,7 @@ const AttackIcon: React.FC<IconProps> = ({ icon, iconScale = 1, size = 'md', glo
 };
 
 // Parallelogram-shaped icon for team-ups (skewed)
-const TeamUpIcon: React.FC<IconProps> = ({ icon, iconScale = 1, size = 'md', glow = false }) => {
+const TeamUpIcon: React.FC<IconProps> = ({ icon, iconScale = 1, size = 'md', glow = false, breakout = false }) => {
     const sizeClasses = {
         sm: 'w-10 h-10',
         md: 'w-12 h-12',
@@ -184,14 +187,15 @@ const TeamUpIcon: React.FC<IconProps> = ({ icon, iconScale = 1, size = 'md', glo
     };
 
     const glowStyle = glow ? { boxShadow: '0 0 20px rgba(255,200,0,0.6)' } : {};
+    const breakoutStyle = breakout ? { zIndex: 10 } : {};
 
     return (
         <div 
-            className={`${sizeClasses[size]} bg-[#1a1a1a] border border-yellow-500/60 flex-shrink-0 overflow-hidden`}
-            style={{ ...glowStyle, transform: 'skewX(-10deg)' }}
+            className={`${sizeClasses[size]} bg-[#1a1a1a] border border-yellow-500/60 flex-shrink-0 ${breakout ? '' : 'overflow-hidden'}`}
+            style={{ ...glowStyle, ...breakoutStyle, transform: 'skewX(-10deg)' }}
         >
             {icon ? (
-                <div className="w-full h-full flex items-center justify-center" style={{ transform: 'skewX(10deg)' }}>
+                <div className={`w-full h-full flex items-center justify-center ${breakout ? 'overflow-visible' : ''}`} style={{ transform: 'skewX(10deg)' }}>
                     <img 
                         src={icon} 
                         alt="" 
@@ -421,8 +425,8 @@ const AbilityBlockRenderer: React.FC<{ block: AbilityBlock; getHotkey: (pc: stri
     const { ability } = block;
     return (
         <div className="flex gap-4 items-start">
-            <div className="flex flex-col items-center w-14 flex-shrink-0">
-                <AbilityIcon icon={ability.icon} iconScale={ability.iconScale} size="md" />
+            <div className="flex flex-col items-center w-14 flex-shrink-0" style={ability.iconBreakout ? { overflow: 'visible' } : undefined}>
+                <AbilityIcon icon={ability.icon} iconScale={ability.iconScale} size="md" breakout={ability.iconBreakout} />
                 {ability.isPassive ? (
                     <HotkeyLabel hotkey="PASSIVE" />
                 ) : (
@@ -446,8 +450,8 @@ const AttackBlockRenderer: React.FC<{ block: AttackBlock; getHotkey: (pc: string
     const { attack } = block;
     return (
         <div className="flex gap-4 items-start">
-            <div className="flex flex-col items-center">
-                <AttackIcon icon={attack.icon} iconScale={attack.iconScale} size="md" />
+            <div className="flex flex-col items-center" style={attack.iconBreakout ? { overflow: 'visible' } : undefined}>
+                <AttackIcon icon={attack.icon} iconScale={attack.iconScale} size="md" breakout={attack.iconBreakout} />
                 <HotkeyLabel hotkey={getHotkey(attack.hotkey, attack.hotkeyConsole)} />
             </div>
             <div className="flex-1 min-w-0 pt-1">
@@ -467,8 +471,8 @@ const TeamUpBlockRenderer: React.FC<{ block: TeamUpBlock; getHotkey: (pc: string
     const { teamUp } = block;
     return (
         <div className="flex gap-4 items-start">
-            <div className="flex flex-col items-center">
-                <TeamUpIcon icon={teamUp.icon} iconScale={teamUp.iconScale} size="md" />
+            <div className="flex flex-col items-center" style={teamUp.iconBreakout ? { overflow: 'visible' } : undefined}>
+                <TeamUpIcon icon={teamUp.icon} iconScale={teamUp.iconScale} size="md" breakout={teamUp.iconBreakout} />
                 {teamUp.isPassive ? (
                     <HotkeyLabel hotkey="PASSIVE" />
                 ) : (
@@ -526,9 +530,9 @@ const ColumnsBlockRenderer: React.FC<ColumnsBlockRendererProps> = ({ block, rend
             {block.columns.map((column) => (
                 <div key={column.id} className="space-y-4">
                     {column.title && (
-                        <div className="flex items-center gap-3 mb-5">
+                        <div className="flex items-center gap-3 mb-5" style={column.iconBreakout ? { overflow: 'visible' } : undefined}>
                             {/* Use AbilityIcon for diamond shape with background */}
-                            <AbilityIcon icon={column.icon} iconScale={column.iconScale} size="md" />
+                            <AbilityIcon icon={column.icon} iconScale={column.iconScale} size="md" breakout={column.iconBreakout} />
                             <h3 className="text-xl font-bold uppercase tracking-wider text-white">
                                 {column.title}
                             </h3>
@@ -610,8 +614,8 @@ const AbilityPageRenderer = React.forwardRef<HTMLDivElement, AbilityPageRenderer
                         <div className="flex flex-col" style={{ gap: `${displaySettings.abilitySpacing ?? 16}px` }}>
                             {heroData.attacks.map((attack) => (
                                 <div key={attack.id} className="flex gap-4 items-start">
-                                    <div className="flex flex-col items-center">
-                                        <AttackIcon icon={attack.icon} iconScale={attack.iconScale} size="md" />
+                                    <div className="flex flex-col items-center" style={attack.iconBreakout ? { overflow: 'visible' } : undefined}>
+                                        <AttackIcon icon={attack.icon} iconScale={attack.iconScale} size="md" breakout={attack.iconBreakout} />
                                         <HotkeyLabel hotkey={getHotkey(attack.hotkey, attack.hotkeyConsole)} />
                                     </div>
                                     <div className="flex-1 min-w-0 pt-1">
@@ -640,8 +644,8 @@ const AbilityPageRenderer = React.forwardRef<HTMLDivElement, AbilityPageRenderer
                             <div className="flex flex-col" style={{ gap: `${displaySettings.abilitySpacing ?? 16}px` }}>
                                 {heroData.teamUpAbilities.map((teamUp) => (
                                     <div key={teamUp.id} className="flex gap-4 items-start">
-                                        <div className="flex flex-col items-center">
-                                            <TeamUpIcon icon={teamUp.icon} iconScale={teamUp.iconScale} size="md" />
+                                        <div className="flex flex-col items-center" style={teamUp.iconBreakout ? { overflow: 'visible' } : undefined}>
+                                            <TeamUpIcon icon={teamUp.icon} iconScale={teamUp.iconScale} size="md" breakout={teamUp.iconBreakout} />
                                             {teamUp.isPassive ? (
                                                 <HotkeyLabel hotkey="PASSIVE" />
                                             ) : (
@@ -731,12 +735,15 @@ const AbilityPageRenderer = React.forwardRef<HTMLDivElement, AbilityPageRenderer
                                     <div className="absolute inset-0 bg-yellow-500/30 blur-lg rounded-full transform scale-150" />
                                     {/* Diamond shape with glow */}
                                     <div 
-                                        className="w-10 h-10 bg-[#1a1a1a] border border-yellow-500/60 flex-shrink-0 overflow-hidden rotate-45 flex items-center justify-center"
-                                        style={{ boxShadow: '0 0 20px rgba(255,200,0,0.6), inset 0 0 15px rgba(255,200,0,0.4)' }}
+                                        className={`w-10 h-10 bg-[#1a1a1a] border border-yellow-500/60 flex-shrink-0 ${heroData.ultimate.iconBreakout ? '' : 'overflow-hidden'} rotate-45 flex items-center justify-center`}
+                                        style={{ 
+                                            boxShadow: '0 0 20px rgba(255,200,0,0.6), inset 0 0 15px rgba(255,200,0,0.4)',
+                                            ...(heroData.ultimate.iconBreakout ? { zIndex: 10, overflow: 'visible' } : {})
+                                        }}
                                     >
                                         {/* Custom icon if provided (made white) */}
                                         {heroData.ultimate.icon && (
-                                            <div className="-rotate-45 flex items-center justify-center w-full h-full">
+                                            <div className={`-rotate-45 flex items-center justify-center w-full h-full ${heroData.ultimate.iconBreakout ? 'overflow-visible' : ''}`}>
                                                 <img 
                                                     src={heroData.ultimate.icon}
                                                     alt="" 
@@ -779,8 +786,8 @@ const AbilityPageRenderer = React.forwardRef<HTMLDivElement, AbilityPageRenderer
                         {/* Regular Abilities */}
                         {heroData.abilities.map((ability) => (
                             <div key={ability.id} className="flex gap-4 items-start">
-                                <div className="flex flex-col items-center w-14 flex-shrink-0">
-                                    <AbilityIcon icon={ability.icon} iconScale={ability.iconScale} size="md" />
+                                <div className="flex flex-col items-center w-14 flex-shrink-0" style={ability.iconBreakout ? { overflow: 'visible' } : undefined}>
+                                    <AbilityIcon icon={ability.icon} iconScale={ability.iconScale} size="md" breakout={ability.iconBreakout} />
                                     <HotkeyLabel hotkey={getHotkey(ability.hotkey, ability.hotkeyConsole)} />
                                 </div>
                                 <div className="flex-1 min-w-0 pt-1">
@@ -802,8 +809,8 @@ const AbilityPageRenderer = React.forwardRef<HTMLDivElement, AbilityPageRenderer
                         {/* Passives */}
                         {heroData.passives.map((passive) => (
                             <div key={passive.id} className="flex gap-4 items-start">
-                                <div className="flex flex-col items-center w-14 flex-shrink-0">
-                                    <AbilityIcon icon={passive.icon} iconScale={passive.iconScale} size="md" />
+                                <div className="flex flex-col items-center w-14 flex-shrink-0" style={passive.iconBreakout ? { overflow: 'visible' } : undefined}>
+                                    <AbilityIcon icon={passive.icon} iconScale={passive.iconScale} size="md" breakout={passive.iconBreakout} />
                                     <HotkeyLabel hotkey="PASSIVE" />
                                 </div>
                                 <div className="flex-1 min-w-0 pt-1">
@@ -887,8 +894,8 @@ const AbilityPageRenderer = React.forwardRef<HTMLDivElement, AbilityPageRenderer
                     <div className="grid grid-cols-2 gap-6">
                         {page.abilities.map((ability) => (
                             <div key={ability.id} className="flex gap-4 items-start">
-                                <div className="flex flex-col items-center">
-                                    <AbilityIcon icon={ability.icon} iconScale={ability.iconScale} size="md" />
+                                <div className="flex flex-col items-center" style={ability.iconBreakout ? { overflow: 'visible' } : undefined}>
+                                    <AbilityIcon icon={ability.icon} iconScale={ability.iconScale} size="md" breakout={ability.iconBreakout} />
                                     {ability.isPassive ? (
                                         <HotkeyLabel hotkey="PASSIVE" />
                                     ) : (

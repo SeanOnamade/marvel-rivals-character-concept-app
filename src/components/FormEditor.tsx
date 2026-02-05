@@ -350,18 +350,19 @@ const FormEditor: React.FC<FormEditorProps> = ({ heroData, onChange, displaySett
     const confirmLoadTemplate = () => {
         if (!pendingTemplate) return;
         
-        const newDisplaySettings = pendingTemplate.displaySettings
+        const baseDisplaySettings = pendingTemplate.displaySettings
             ? { ...getDefaultDisplaySettings(), ...pendingTemplate.displaySettings }
             : displaySettings;
+        
+        // Always reset to first page when loading a template
+        const newDisplaySettings = { ...baseDisplaySettings, currentPage: 0 };
         
         // Use batch change if available (single undo step), otherwise fall back to separate calls
         if (onBatchChange) {
             onBatchChange(pendingTemplate.heroData, newDisplaySettings);
         } else {
             onChange(pendingTemplate.heroData);
-            if (pendingTemplate.displaySettings) {
-                onDisplaySettingsChange(newDisplaySettings);
-            }
+            onDisplaySettingsChange(newDisplaySettings);
         }
         
         // Close modal and show success toast
@@ -515,7 +516,7 @@ const FormEditor: React.FC<FormEditorProps> = ({ heroData, onChange, displaySett
     };
 
     // Attack handlers
-    const updateAttack = (id: string, field: keyof Attack, value: string | number) => {
+    const updateAttack = (id: string, field: keyof Attack, value: string | number | boolean) => {
         const newAttacks = heroData.attacks.map(attack =>
             attack.id === id ? { ...attack, [field]: value } : attack
         );
@@ -1004,6 +1005,7 @@ const FormEditor: React.FC<FormEditorProps> = ({ heroData, onChange, displaySett
                                 abilitySpacing: 16,
                                 showBackground: false,
                                 customBackground: undefined,
+                                currentPage: 0, // Reset to first page
                             };
                             if (onBatchChange) {
                                 onBatchChange(newHeroData, newDisplaySettings);
@@ -1025,6 +1027,7 @@ const FormEditor: React.FC<FormEditorProps> = ({ heroData, onChange, displaySett
                                 const newDisplaySettings = {
                                     ...displaySettings,
                                     ...presetDisplaySettings,
+                                    currentPage: 0, // Reset to first page when loading preset
                                 };
                                 if (onBatchChange) {
                                     onBatchChange(newHeroData, newDisplaySettings);
@@ -2011,6 +2014,15 @@ const FormEditor: React.FC<FormEditorProps> = ({ heroData, onChange, displaySett
                                             title={`Scale: ${attack.iconScale || 1}x`}
                                         />
                                         <span className="text-[10px] text-gray-500 w-6">{attack.iconScale || 1}x</span>
+                                        <label className="flex items-center gap-1 ml-2" title="Icon breaks out of container">
+                                            <input
+                                                type="checkbox"
+                                                checked={attack.iconBreakout || false}
+                                                onChange={(e) => updateAttack(attack.id, 'iconBreakout', e.target.checked)}
+                                                className="w-3 h-3"
+                                            />
+                                            <span className="text-[9px] text-gray-500">Breakout</span>
+                                        </label>
                                     </div>
                                 )}
                                 {heroData.attacks.length > 1 && (
@@ -2084,6 +2096,15 @@ const FormEditor: React.FC<FormEditorProps> = ({ heroData, onChange, displaySett
                                             title={`Scale: ${teamUp.iconScale || 1}x`}
                                         />
                                         <span className="text-[10px] text-gray-500 w-6">{teamUp.iconScale || 1}x</span>
+                                        <label className="flex items-center gap-1 ml-2" title="Icon breaks out of container">
+                                            <input
+                                                type="checkbox"
+                                                checked={teamUp.iconBreakout || false}
+                                                onChange={(e) => updateTeamUp(teamUp.id, 'iconBreakout', e.target.checked)}
+                                                className="w-3 h-3"
+                                            />
+                                            <span className="text-[9px] text-gray-500">Breakout</span>
+                                        </label>
                                     </div>
                                 )}
                                 <button onClick={() => removeTeamUp(teamUp.id)} className="text-red-500 hover:text-red-400">
@@ -2372,6 +2393,15 @@ const FormEditor: React.FC<FormEditorProps> = ({ heroData, onChange, displaySett
                                         title={`Scale: ${heroData.ultimate.iconScale || 1}x`}
                                     />
                                     <span className="text-[10px] text-gray-500 w-6">{heroData.ultimate.iconScale || 1}x</span>
+                                    <label className="flex items-center gap-1 ml-2" title="Icon breaks out of container">
+                                        <input
+                                            type="checkbox"
+                                            checked={heroData.ultimate.iconBreakout || false}
+                                            onChange={(e) => updateUltimate('iconBreakout', e.target.checked)}
+                                            className="w-3 h-3"
+                                        />
+                                        <span className="text-[9px] text-gray-500">Breakout</span>
+                                    </label>
                                 </div>
                             )}
                         </div>
@@ -2436,6 +2466,15 @@ const FormEditor: React.FC<FormEditorProps> = ({ heroData, onChange, displaySett
                                             title={`Scale: ${ability.iconScale || 1}x`}
                                         />
                                         <span className="text-[10px] text-gray-500 w-6">{ability.iconScale || 1}x</span>
+                                        <label className="flex items-center gap-1 ml-2" title="Icon breaks out of container">
+                                            <input
+                                                type="checkbox"
+                                                checked={ability.iconBreakout || false}
+                                                onChange={(e) => updateAbility(ability.id, 'iconBreakout', e.target.checked)}
+                                                className="w-3 h-3"
+                                            />
+                                            <span className="text-[9px] text-gray-500">Breakout</span>
+                                        </label>
                                     </div>
                                 )}
                                 {heroData.abilities.length > 1 && (
@@ -2508,6 +2547,15 @@ const FormEditor: React.FC<FormEditorProps> = ({ heroData, onChange, displaySett
                                             title={`Scale: ${passive.iconScale || 1}x`}
                                         />
                                         <span className="text-[10px] text-gray-500 w-6">{passive.iconScale || 1}x</span>
+                                        <label className="flex items-center gap-1 ml-2" title="Icon breaks out of container">
+                                            <input
+                                                type="checkbox"
+                                                checked={passive.iconBreakout || false}
+                                                onChange={(e) => updatePassive(passive.id, 'iconBreakout', e.target.checked)}
+                                                className="w-3 h-3"
+                                            />
+                                            <span className="text-[9px] text-gray-500">Breakout</span>
+                                        </label>
                                     </div>
                                 )}
                                 <button onClick={() => removePassive(passive.id)} className="text-red-500 hover:text-red-400">
@@ -2625,7 +2673,7 @@ const FormEditor: React.FC<FormEditorProps> = ({ heroData, onChange, displaySett
                                 max="100"
                                 value={page.contentOffsetY ?? 0}
                                 onChange={(e) => updatePageContentOffset(page.id, parseInt(e.target.value))}
-                                className="w-full h-1 bg-marvel-dark rounded-lg appearance-none cursor-pointer accent-marvel-yellow"
+                                className="w-full h-1 bg-gray-600 rounded-lg appearance-none cursor-pointer accent-marvel-yellow"
                             />
                         </div>
 
@@ -2914,9 +2962,18 @@ const FormEditor: React.FC<FormEditorProps> = ({ heroData, onChange, displaySett
                                                                 step="0.1"
                                                                 value={column.iconScale || 1}
                                                                 onChange={(e) => updateColumn(page.id, block.id, column.id, { iconScale: parseFloat(e.target.value) })}
-                                                                className="flex-1 h-1 bg-marvel-dark rounded-lg appearance-none cursor-pointer accent-marvel-yellow"
+                                                                className="flex-1 h-1 bg-gray-600 rounded-lg appearance-none cursor-pointer accent-marvel-yellow"
                                                             />
                                                             <span className="text-[9px] text-marvel-yellow w-6">{column.iconScale || 1}</span>
+                                                            <label className="flex items-center gap-1 ml-1" title="Icon breaks out of container">
+                                                                <input
+                                                                    type="checkbox"
+                                                                    checked={column.iconBreakout || false}
+                                                                    onChange={(e) => updateColumn(page.id, block.id, column.id, { iconBreakout: e.target.checked })}
+                                                                    className="w-2 h-2"
+                                                                />
+                                                                <span className="text-[8px] text-gray-500">Breakout</span>
+                                                            </label>
                                                         </div>
                                                         
                                                         {/* Add block to column */}
@@ -2972,9 +3029,18 @@ const FormEditor: React.FC<FormEditorProps> = ({ heroData, onChange, displaySett
                                                                                 step="0.1"
                                                                                 value={(colBlock as AbilityBlock).ability.iconScale || 1}
                                                                                 onChange={(e) => updateColumnBlock(page.id, block.id, column.id, colBlock.id, { ability: { ...(colBlock as AbilityBlock).ability, iconScale: parseFloat(e.target.value) } })}
-                                                                                className="flex-1 h-1 bg-marvel-dark rounded-lg appearance-none cursor-pointer accent-marvel-yellow"
+                                                                                className="flex-1 h-1 bg-gray-600 rounded-lg appearance-none cursor-pointer accent-marvel-yellow"
                                                                             />
                                                                             <span className="text-[9px] text-marvel-yellow w-6">{(colBlock as AbilityBlock).ability.iconScale || 1}</span>
+                                                                            <label className="flex items-center gap-1 ml-1" title="Icon breaks out of container">
+                                                                                <input
+                                                                                    type="checkbox"
+                                                                                    checked={(colBlock as AbilityBlock).ability.iconBreakout || false}
+                                                                                    onChange={(e) => updateColumnBlock(page.id, block.id, column.id, colBlock.id, { ability: { ...(colBlock as AbilityBlock).ability, iconBreakout: e.target.checked } })}
+                                                                                    className="w-2 h-2"
+                                                                                />
+                                                                                <span className="text-[8px] text-gray-500">Breakout</span>
+                                                                            </label>
                                                                         </div>
                                                                         <textarea
                                                                             value={(colBlock as AbilityBlock).ability.description}
@@ -3010,9 +3076,18 @@ const FormEditor: React.FC<FormEditorProps> = ({ heroData, onChange, displaySett
                                                                                 step="0.1"
                                                                                 value={(colBlock as AttackBlock).attack.iconScale || 1}
                                                                                 onChange={(e) => updateColumnBlock(page.id, block.id, column.id, colBlock.id, { attack: { ...(colBlock as AttackBlock).attack, iconScale: parseFloat(e.target.value) } })}
-                                                                                className="flex-1 h-1 bg-marvel-dark rounded-lg appearance-none cursor-pointer accent-marvel-yellow"
+                                                                                className="flex-1 h-1 bg-gray-600 rounded-lg appearance-none cursor-pointer accent-marvel-yellow"
                                                                             />
                                                                             <span className="text-[9px] text-marvel-yellow w-6">{(colBlock as AttackBlock).attack.iconScale || 1}</span>
+                                                                            <label className="flex items-center gap-1 ml-1" title="Icon breaks out of container">
+                                                                                <input
+                                                                                    type="checkbox"
+                                                                                    checked={(colBlock as AttackBlock).attack.iconBreakout || false}
+                                                                                    onChange={(e) => updateColumnBlock(page.id, block.id, column.id, colBlock.id, { attack: { ...(colBlock as AttackBlock).attack, iconBreakout: e.target.checked } })}
+                                                                                    className="w-2 h-2"
+                                                                                />
+                                                                                <span className="text-[8px] text-gray-500">Breakout</span>
+                                                                            </label>
                                                                         </div>
                                                                         <textarea
                                                                             value={(colBlock as AttackBlock).attack.description}

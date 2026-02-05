@@ -20,6 +20,7 @@ export interface Ability {
     hotkeyConsole?: string; // Console button equivalent
     icon?: string;
     iconScale?: number; // Icon scale (0.5 to 2, default 1)
+    iconBreakout?: boolean; // If true, icon breaks out of container (higher z-index, no clipping)
     isPassive?: boolean; // Passives appear at bottom of abilities column
 }
 
@@ -31,6 +32,7 @@ export interface Attack {
     hotkeyConsole?: string;
     icon?: string;
     iconScale?: number; // Icon scale (0.5 to 2, default 1)
+    iconBreakout?: boolean; // If true, icon breaks out of container (higher z-index, no clipping)
 }
 
 export interface TeamUpAbility {
@@ -41,6 +43,7 @@ export interface TeamUpAbility {
     hotkeyConsole?: string;
     icon?: string;
     iconScale?: number; // Icon scale (0.5 to 2, default 1)
+    iconBreakout?: boolean; // If true, icon breaks out of container (higher z-index, no clipping)
     iconCrop?: CropBounds; // Crop for the team-up icon
     isPassive?: boolean; // Team-ups can be passive too
     isAnchor?: boolean; // true = hero is anchor, false = hero is secondary (default: true)
@@ -112,6 +115,7 @@ export interface ColumnData {
     title?: string;
     icon?: string;
     iconScale?: number;
+    iconBreakout?: boolean; // If true, icon breaks out of container (higher z-index, no clipping)
     blocks: PageBlock[];
 }
 
@@ -789,7 +793,7 @@ export const getGambitPreset = (): HeroData => ({
         {
             id: generateId(),
             name: 'ACE OF ACES',
-            description: 'Gambit shares kinetic energy with Magneto and Rogue. When Magneto activates this ability, [green]Iron Volley[/green] is replaced with [green]Ace Greatsword[/green], which detonates upon striking enemies. The explosion leaves residual kinetic energy within the target, inflicting secondary damage after a brief delay. When Rogue activates the ability, each of her attacks causes a kinetic explosion that damages nearby enemies and heals nearby allies.',
+            description: 'Gambit shares kinetic energy with Magneto and Rogue. When Magneto activates this ability, [orange]Iron Volley[/orange] is replaced with [orange]Ace Greatsword[/orange], which detonates upon striking enemies. The explosion leaves residual kinetic energy within the target, inflicting secondary damage after a brief delay. When Rogue activates the ability, each of her attacks causes a kinetic explosion that damages nearby enemies and heals nearby allies.',
             hotkey: 'PASSIVE',
             hotkeyConsole: 'D-Pad',
             isPassive: true,
@@ -812,7 +816,7 @@ export const getGambitPreset = (): HeroData => ({
         {
             id: generateId(),
             name: 'HEALING HEARTS',
-            description: 'Conjure a Heart card by consuming one stack of [green]Sleight of Hand[/green] to Heal and switch to the [green]Healing Hearts[/green] deck.',
+            description: 'Conjure a Heart card by consuming one stack of [orange]Sleight of Hand[/orange] to Heal and switch to the [green]Healing Hearts[/green] deck.',
             hotkey: 'E',
             hotkeyConsole: 'R1',
             icon: '/icons/gambit/healing-hearts.png',
@@ -821,7 +825,7 @@ export const getGambitPreset = (): HeroData => ({
         {
             id: generateId(),
             name: 'BREAKING SPADES',
-            description: 'Conjure a Spade card by consuming one stack of [green]Sleight of Hand[/green] to gain a [orange]Damage Boost[/orange] and switch to the [orange]Breaking Spades[/orange] deck.',
+            description: 'Conjure a Spade card by consuming one stack of [orange]Sleight of Hand[/orange] to gain a [green]Damage Boost[/green] and switch to the [orange]Breaking Spades[/orange] deck.',
             hotkey: 'F',
             hotkeyConsole: 'Triangle',
             icon: '/icons/gambit/breaking-spades.png',
@@ -830,7 +834,7 @@ export const getGambitPreset = (): HeroData => ({
         {
             id: generateId(),
             name: 'BAYOU BASH',
-            description: 'Channel kinetic energy into the bo staff, then slam it into the ground after a sweeping strike, creating a shockwave that damages nearby enemies and heals allies. Follow up [green]Cajun Charge[/green] with [orange]Big Easy Impact[/orange] to sprint forward while striking with the bo staff, triggering three kinetic explosions along the path.',
+            description: 'Channel kinetic energy into the bo staff, then slam it into the ground after a sweeping strike, creating a shockwave that damages nearby enemies and heals allies. Follow up [orange]Cajun Charge[/orange] with [orange]Big Easy Impact[/orange] to sprint forward while striking with the bo staff, triggering three kinetic explosions along the path.',
             hotkey: 'RMB',
             hotkeyConsole: 'L2',
             icon: '/icons/gambit/bayou-bash.png',
@@ -841,7 +845,7 @@ export const getGambitPreset = (): HeroData => ({
     ultimate: {
         id: generateId(),
         name: 'RAGIN\' ROYAL FLUSH',
-        description: 'Lock onto an ally within sight and unleash multiple Aces that heal and [blue]Purify[/blue]. Both enter the [green]Kinetic Transfer[/green] state, granting increased [green]Movement Speed[/green] and [green]Jump Boost[/green], while enhancing attacks with additional single-target explosive damage and providing the ally with Ultimate Ability Charge Acceleration.',
+        description: 'Lock onto an ally within sight and unleash multiple Aces that heal and [green]Purify[/green]. Both enter the [green]Kinetic Transfer[/green] state, granting increased [green]Movement Speed[/green] and [green]Jump Boost[/green], while enhancing attacks with additional single-target explosive damage and providing the ally with Ultimate Ability Charge Acceleration.',
         hotkey: 'Q',
         hotkeyConsole: 'L3+R3',
         icon: '/icons/gambit/ragin-royal-flush.png',
@@ -870,7 +874,7 @@ export const getGambitPreset = (): HeroData => ({
                                     ability: {
                                         id: generateId(),
                                         name: 'BRIDGE BOOST',
-                                        description: 'While [green]Healing Hearts[/green] deck is active, trigger [green]Flush Empowerment[/green] to card spring and fire a full deck forward. Cards bounce between allies on impact, granting Health and a [green]Healing Boost[/green].',
+                                        description: 'While [green]Healing Hearts[/green] deck is active, trigger [orange]Flush Empowerment[/orange] to card spring and fire a full deck forward. Cards bounce between allies on impact, granting Health and a [green]Healing Boost[/green].',
                                         hotkey: 'E',
                                         hotkeyConsole: 'R1',
                                         icon: '/icons/gambit/bridge-boost.png',
@@ -883,7 +887,7 @@ export const getGambitPreset = (): HeroData => ({
                                     ability: {
                                         id: generateId(),
                                         name: 'PURIFYING PICK-UP',
-                                        description: 'While [green]Healing Hearts[/green] deck is active, trigger [green]Raise Empowerment[/green] to launch a cluster of cards in an arc ahead. Explosions heal nearby allies and [blue]Purify[/blue] them.',
+                                        description: 'While [green]Healing Hearts[/green] deck is active, trigger [orange]Raise Empowerment[/orange] to launch a cluster of cards in an arc ahead. Explosions heal nearby allies and [green]Purify[/green] them.',
                                         hotkey: 'F',
                                         hotkeyConsole: 'Triangle',
                                         icon: '/icons/gambit/purifying-pickup.png',
@@ -917,7 +921,7 @@ export const getGambitPreset = (): HeroData => ({
                                     ability: {
                                         id: generateId(),
                                         name: 'BIDDING BARRAGE',
-                                        description: 'While [orange]Breaking Spades[/orange] deck is active, trigger [orange]Raise Empowerment[/orange] to scatter cards in an arc in all directions. Explosions damage enemies and [orange]Launch[/orange] them up.',
+                                        description: 'While [orange]Breaking Spades[/orange] deck is active, trigger [orange]Raise Empowerment[/orange] to scatter cards in an arc in all directions. Explosions damage enemies and [blue]Launch[/blue] them up.',
                                         hotkey: 'F',
                                         hotkeyConsole: 'Triangle',
                                         icon: '/icons/gambit/bidding-barrage.png',
