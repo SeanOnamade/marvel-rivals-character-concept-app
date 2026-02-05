@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { HeroData, Role, Attack, Ability, TeamUpAbility, DisplaySettings, ContentPage, CropBounds, createDefaultAttack, createDefaultAbility, createDefaultTeamUp, createDefaultPassive, createDefaultContentPage, getDefaultPortraitSettings, getDefaultHeroInfoSettings, getDefaultCropBounds, getDefaultHeroData, getDefaultFoldSettings, getDefaultDisplaySettings, HERO_PRESETS, HERO_ICONS, CONSOLE_BUTTON_OPTIONS, CONSOLE_ATTACK_OPTIONS } from '../types';
+import { HeroData, Role, Attack, Ability, TeamUpAbility, DisplaySettings, ContentPage, CropBounds, createDefaultAttack, createDefaultAbility, createDefaultTeamUp, createDefaultPassive, createDefaultContentPage, getDefaultPortraitSettings, getDefaultHeroInfoSettings, getDefaultCropBounds, getDefaultHeroData, getDefaultFoldSettings, getDefaultDisplaySettings, HERO_PRESETS, HERO_ICONS, CONSOLE_BUTTON_OPTIONS, CONSOLE_ATTACK_OPTIONS, PageBlock, PageBlockType, HeaderBlock, AbilityBlock, AttackBlock, TeamUpBlock, TextBlock, ColumnsBlock, ColumnData, createDefaultHeaderBlock, createDefaultAbilityBlock, createDefaultAttackBlock, createDefaultTeamUpBlock, createDefaultTextBlock, createDefaultColumnsBlock, createDefaultDividerBlock } from '../types';
 import { downloadTemplate, loadTemplateFromFile } from '../utils';
 import { Plus, Trash2, Upload, Monitor, Gamepad2, ChevronDown, ChevronUp, ChevronRight, Move, Type, Crop, GripVertical, Download, FolderOpen, Wand2, Loader2, Palette, Swords, FileText, Image } from 'lucide-react';
 import { removeBackground } from '@imgly/background-removal';
@@ -183,6 +183,7 @@ const FormEditor: React.FC<FormEditorProps> = ({ heroData, onChange, displaySett
     const [showCropEditor, setShowCropEditor] = useState(false);
     const [showLogoCropEditor, setShowLogoCropEditor] = useState(false); // Logo crop editor
     const [characterCropEditorId, setCharacterCropEditorId] = useState<string | null>(null); // Team-up ID for character crop editor
+    const [showMainPageIconCrop, setShowMainPageIconCrop] = useState(false); // Page 1 icon crop editor
     const [foldExpanded, setFoldExpanded] = useState(false);
     const [heroImageExpanded, setHeroImageExpanded] = useState(false);
     const [heroNameExpanded, setHeroNameExpanded] = useState(false);
@@ -698,6 +699,232 @@ const FormEditor: React.FC<FormEditorProps> = ({ heroData, onChange, displaySett
                     a.id === abilityId ? { ...a, [field]: value } : a
                 );
                 return { ...page, abilities: newAbilities };
+            }
+            return page;
+        }) || [];
+        onChange({ ...heroData, additionalPages: newPages });
+    };
+
+    // ============================================
+    // Block-based page handlers (new page builder)
+    // ============================================
+    
+    // Toggle page to use blocks mode
+    const togglePageBlockMode = (pageId: string) => {
+        const newPages = heroData.additionalPages?.map(page => {
+            if (page.id === pageId) {
+                // If switching to blocks and no blocks exist, initialize with empty array
+                if (!page.blocks) {
+                    return { ...page, blocks: [] };
+                }
+                // If already has blocks, clear them to go back to simple mode
+                return { ...page, blocks: undefined };
+            }
+            return page;
+        }) || [];
+        onChange({ ...heroData, additionalPages: newPages });
+    };
+
+    // Update page layout
+    const updatePageLayout = (pageId: string, layout: 'single' | 'two-column') => {
+        const newPages = heroData.additionalPages?.map(page =>
+            page.id === pageId ? { ...page, layout } : page
+        ) || [];
+        onChange({ ...heroData, additionalPages: newPages });
+    };
+
+    // Update page content offset
+    const updatePageContentOffset = (pageId: string, offset: number) => {
+        const newPages = heroData.additionalPages?.map(page =>
+            page.id === pageId ? { ...page, contentOffsetY: offset } : page
+        ) || [];
+        onChange({ ...heroData, additionalPages: newPages });
+    };
+
+    // Add block to page
+    const addBlockToPage = (pageId: string, blockType: PageBlockType) => {
+        let newBlock: PageBlock;
+        switch (blockType) {
+            case 'header':
+                newBlock = createDefaultHeaderBlock();
+                break;
+            case 'ability':
+                newBlock = createDefaultAbilityBlock();
+                break;
+            case 'attack':
+                newBlock = createDefaultAttackBlock();
+                break;
+            case 'teamup':
+                newBlock = createDefaultTeamUpBlock();
+                break;
+            case 'text':
+                newBlock = createDefaultTextBlock();
+                break;
+            case 'columns':
+                newBlock = createDefaultColumnsBlock();
+                break;
+            case 'divider':
+                newBlock = createDefaultDividerBlock();
+                break;
+            default:
+                return;
+        }
+        
+        const newPages = heroData.additionalPages?.map(page =>
+            page.id === pageId ? { ...page, blocks: [...(page.blocks || []), newBlock] } : page
+        ) || [];
+        onChange({ ...heroData, additionalPages: newPages });
+    };
+
+    // Remove block from page
+    const removeBlockFromPage = (pageId: string, blockId: string) => {
+        const newPages = heroData.additionalPages?.map(page =>
+            page.id === pageId ? { ...page, blocks: page.blocks?.filter(b => b.id !== blockId) || [] } : page
+        ) || [];
+        onChange({ ...heroData, additionalPages: newPages });
+    };
+
+    // Update block in page
+    const updateBlock = (pageId: string, blockId: string, updates: Partial<PageBlock>) => {
+        const newPages = heroData.additionalPages?.map(page => {
+            if (page.id === pageId) {
+                const newBlocks = page.blocks?.map(block =>
+                    block.id === blockId ? { ...block, ...updates } as PageBlock : block
+                ) || [];
+                return { ...page, blocks: newBlocks };
+            }
+            return page;
+        }) || [];
+        onChange({ ...heroData, additionalPages: newPages });
+    };
+
+    // Move block up/down in page
+    const moveBlock = (pageId: string, blockId: string, direction: 'up' | 'down') => {
+        const newPages = heroData.additionalPages?.map(page => {
+            if (page.id === pageId && page.blocks) {
+                const blocks = [...page.blocks];
+                const index = blocks.findIndex(b => b.id === blockId);
+                if (index === -1) return page;
+                
+                const newIndex = direction === 'up' ? index - 1 : index + 1;
+                if (newIndex < 0 || newIndex >= blocks.length) return page;
+                
+                [blocks[index], blocks[newIndex]] = [blocks[newIndex], blocks[index]];
+                return { ...page, blocks };
+            }
+            return page;
+        }) || [];
+        onChange({ ...heroData, additionalPages: newPages });
+    };
+
+    // Add block to column within a columns block
+    const addBlockToColumn = (pageId: string, columnsBlockId: string, columnId: string, blockType: PageBlockType) => {
+        let newBlock: PageBlock;
+        switch (blockType) {
+            case 'header':
+                newBlock = createDefaultHeaderBlock();
+                break;
+            case 'ability':
+                newBlock = createDefaultAbilityBlock();
+                break;
+            case 'attack':
+                newBlock = createDefaultAttackBlock();
+                break;
+            case 'teamup':
+                newBlock = createDefaultTeamUpBlock();
+                break;
+            case 'text':
+                newBlock = createDefaultTextBlock();
+                break;
+            case 'divider':
+                newBlock = createDefaultDividerBlock();
+                break;
+            default:
+                return;
+        }
+        
+        const newPages = heroData.additionalPages?.map(page => {
+            if (page.id === pageId) {
+                const newBlocks = page.blocks?.map(block => {
+                    if (block.id === columnsBlockId && block.type === 'columns') {
+                        const columnsBlock = block as ColumnsBlock;
+                        const newColumns = columnsBlock.columns.map(col =>
+                            col.id === columnId ? { ...col, blocks: [...col.blocks, newBlock] } : col
+                        );
+                        return { ...columnsBlock, columns: newColumns };
+                    }
+                    return block;
+                }) || [];
+                return { ...page, blocks: newBlocks };
+            }
+            return page;
+        }) || [];
+        onChange({ ...heroData, additionalPages: newPages });
+    };
+
+    // Remove block from column
+    const removeBlockFromColumn = (pageId: string, columnsBlockId: string, columnId: string, blockId: string) => {
+        const newPages = heroData.additionalPages?.map(page => {
+            if (page.id === pageId) {
+                const newBlocks = page.blocks?.map(block => {
+                    if (block.id === columnsBlockId && block.type === 'columns') {
+                        const columnsBlock = block as ColumnsBlock;
+                        const newColumns = columnsBlock.columns.map(col =>
+                            col.id === columnId ? { ...col, blocks: col.blocks.filter(b => b.id !== blockId) } : col
+                        );
+                        return { ...columnsBlock, columns: newColumns };
+                    }
+                    return block;
+                }) || [];
+                return { ...page, blocks: newBlocks };
+            }
+            return page;
+        }) || [];
+        onChange({ ...heroData, additionalPages: newPages });
+    };
+
+    // Update block within a column
+    const updateColumnBlock = (pageId: string, columnsBlockId: string, columnId: string, blockId: string, updates: Partial<PageBlock>) => {
+        const newPages = heroData.additionalPages?.map(page => {
+            if (page.id === pageId) {
+                const newBlocks = page.blocks?.map(block => {
+                    if (block.id === columnsBlockId && block.type === 'columns') {
+                        const columnsBlock = block as ColumnsBlock;
+                        const newColumns = columnsBlock.columns.map(col => {
+                            if (col.id === columnId) {
+                                const newColBlocks = col.blocks.map(b =>
+                                    b.id === blockId ? { ...b, ...updates } as PageBlock : b
+                                );
+                                return { ...col, blocks: newColBlocks };
+                            }
+                            return col;
+                        });
+                        return { ...columnsBlock, columns: newColumns };
+                    }
+                    return block;
+                }) || [];
+                return { ...page, blocks: newBlocks };
+            }
+            return page;
+        }) || [];
+        onChange({ ...heroData, additionalPages: newPages });
+    };
+
+    // Update column properties
+    const updateColumn = (pageId: string, columnsBlockId: string, columnId: string, updates: Partial<ColumnData>) => {
+        const newPages = heroData.additionalPages?.map(page => {
+            if (page.id === pageId) {
+                const newBlocks = page.blocks?.map(block => {
+                    if (block.id === columnsBlockId && block.type === 'columns') {
+                        const columnsBlock = block as ColumnsBlock;
+                        const newColumns = columnsBlock.columns.map(col =>
+                            col.id === columnId ? { ...col, ...updates } : col
+                        );
+                        return { ...columnsBlock, columns: newColumns };
+                    }
+                    return block;
+                }) || [];
+                return { ...page, blocks: newBlocks };
             }
             return page;
         }) || [];
@@ -2299,6 +2526,29 @@ const FormEditor: React.FC<FormEditorProps> = ({ heroData, onChange, displaySett
             {/* ========== PAGES TAB ========== */}
             {activeTab === 'pages' && (
             <>
+            {/* Page 1 Icon */}
+            <CollapsibleSection title="Page 1 Icon" defaultOpen={true} className="mb-6">
+                <p className="text-xs text-gray-500 mb-3">Upload an icon for the main page (page 1) shown in the page indicator. Leave empty to show "1".</p>
+                <div className="flex items-center gap-3">
+                    <IconUpload 
+                        icon={heroData.mainPageIcon} 
+                        onUpload={(url) => onChange({ ...heroData, mainPageIcon: url })} 
+                        size="md" 
+                    />
+                    <div className="flex flex-col gap-1">
+                        <span className="text-sm text-gray-400">Page 1 Icon</span>
+                        {heroData.mainPageIcon && (
+                            <button
+                                onClick={() => setShowMainPageIconCrop(true)}
+                                className="flex items-center gap-1 text-xs text-marvel-yellow hover:text-marvel-accent"
+                            >
+                                <Crop className="w-3 h-3" /> Adjust Crop
+                            </button>
+                        )}
+                    </div>
+                </div>
+            </CollapsibleSection>
+
             {/* Additional Pages */}
             <CollapsibleSection title="Additional Pages" defaultOpen={true} className="mb-6">
                 <div className="flex justify-end mb-3">
@@ -2313,8 +2563,12 @@ const FormEditor: React.FC<FormEditorProps> = ({ heroData, onChange, displaySett
                     <p className="text-gray-500 text-sm italic">No additional pages. Content fits on main page.</p>
                 )}
 
-                {heroData.additionalPages?.map((page, pageIndex) => (
+                {heroData.additionalPages?.map((page, pageIndex) => {
+                    const isBlockMode = page.blocks !== undefined;
+                    
+                    return (
                     <div key={page.id} className="mb-4 p-3 bg-marvel-dark rounded border border-marvel-border">
+                        {/* Page Header */}
                         <div className="flex items-center justify-between mb-3">
                             <h4 className="text-sm font-bold text-marvel-yellow">Page {pageIndex + 2}</h4>
                             <div className="flex items-center gap-2">
@@ -2325,6 +2579,7 @@ const FormEditor: React.FC<FormEditorProps> = ({ heroData, onChange, displaySett
                             </div>
                         </div>
                         
+                        {/* Page Title */}
                         <input
                             type="text"
                             value={page.title}
@@ -2333,44 +2588,463 @@ const FormEditor: React.FC<FormEditorProps> = ({ heroData, onChange, displaySett
                             className="w-full bg-marvel-metal border border-marvel-border rounded px-2 py-1 text-sm text-white mb-3"
                         />
 
-                        <div className="flex items-center justify-between mb-2">
-                            <span className="text-xs text-gray-400">Abilities on this page:</span>
-                            <button onClick={() => addAbilityToPage(page.id)} className="flex items-center gap-1 text-xs text-marvel-yellow hover:text-marvel-accent">
-                                <Plus className="w-3 h-3" /> Add
-                            </button>
+                        {/* Mode Toggle */}
+                        <div className="flex items-center justify-between mb-3 p-2 bg-marvel-metal rounded">
+                            <div className="flex items-center gap-2">
+                                <label className="flex items-center gap-2 cursor-pointer">
+                                    <input
+                                        type="checkbox"
+                                        checked={isBlockMode}
+                                        onChange={() => togglePageBlockMode(page.id)}
+                                        className="w-4 h-4 accent-marvel-yellow"
+                                    />
+                                    <span className="text-xs text-gray-300">Advanced Block Editor</span>
+                                </label>
+                            </div>
+                            {isBlockMode && (
+                                <select
+                                    value={page.layout || 'single'}
+                                    onChange={(e) => updatePageLayout(page.id, e.target.value as 'single' | 'two-column')}
+                                    className="text-xs bg-marvel-dark border border-marvel-border rounded px-2 py-1 text-white"
+                                >
+                                    <option value="single">Single Column</option>
+                                    <option value="two-column">Two Columns</option>
+                                </select>
+                            )}
                         </div>
 
-                        {page.abilities.map((ability, abilityIndex) => (
-                            <div key={ability.id} className="mb-2 p-2 bg-marvel-metal rounded">
-                                <div className="flex items-center justify-between mb-1">
-                                    <span className="text-xs text-gray-400">Ability {abilityIndex + 1}</span>
-                                    <div className="flex items-center gap-1">
-                                        <IconUpload icon={ability.icon} onUpload={(url) => updatePageAbility(page.id, ability.id, 'icon', url)} size="sm" />
-                                        {page.abilities.length > 1 && (
-                                            <button onClick={() => removeAbilityFromPage(page.id, ability.id)} className="text-red-500 hover:text-red-400">
-                                                <Trash2 className="w-3 h-3" />
-                                            </button>
-                                        )}
+                        {/* Per-Page Content Offset */}
+                        <div className="mb-3 p-2 bg-marvel-metal rounded">
+                            <div className="flex items-center justify-between mb-1">
+                                <span className="text-xs text-gray-400">Content Vertical Offset</span>
+                                <span className="text-xs text-marvel-yellow">{page.contentOffsetY ?? 0}px</span>
+                            </div>
+                            <input
+                                type="range"
+                                min="-100"
+                                max="100"
+                                value={page.contentOffsetY ?? 0}
+                                onChange={(e) => updatePageContentOffset(page.id, parseInt(e.target.value))}
+                                className="w-full h-1 bg-marvel-dark rounded-lg appearance-none cursor-pointer accent-marvel-yellow"
+                            />
+                        </div>
+
+                        {/* Simple Mode: Abilities Only (Legacy) */}
+                        {!isBlockMode && (
+                            <>
+                                <div className="flex items-center justify-between mb-2">
+                                    <span className="text-xs text-gray-400">Abilities on this page:</span>
+                                    <button onClick={() => addAbilityToPage(page.id)} className="flex items-center gap-1 text-xs text-marvel-yellow hover:text-marvel-accent">
+                                        <Plus className="w-3 h-3" /> Add
+                                    </button>
+                                </div>
+
+                                {page.abilities.map((ability, abilityIndex) => (
+                                    <div key={ability.id} className="mb-2 p-2 bg-marvel-metal rounded">
+                                        <div className="flex items-center justify-between mb-1">
+                                            <span className="text-xs text-gray-400">Ability {abilityIndex + 1}</span>
+                                            <div className="flex items-center gap-1">
+                                                <IconUpload icon={ability.icon} onUpload={(url) => updatePageAbility(page.id, ability.id, 'icon', url)} size="sm" />
+                                                {page.abilities.length > 1 && (
+                                                    <button onClick={() => removeAbilityFromPage(page.id, ability.id)} className="text-red-500 hover:text-red-400">
+                                                        <Trash2 className="w-3 h-3" />
+                                                    </button>
+                                                )}
+                                            </div>
+                                        </div>
+                                        <input type="text" value={ability.name} onChange={(e) => updatePageAbility(page.id, ability.id, 'name', e.target.value)} placeholder="Name" className="w-full bg-marvel-dark border border-marvel-border rounded px-2 py-1 text-xs text-white mb-1" />
+                                        <div className="flex gap-2 mb-1">
+                                            <input type="text" value={ability.hotkey} onChange={(e) => updatePageAbility(page.id, ability.id, 'hotkey', e.target.value)} placeholder="Hotkey" className="w-20 bg-marvel-dark border border-marvel-border rounded px-2 py-1 text-xs text-white" />
+                                            <label className="flex items-center gap-1 cursor-pointer">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={ability.isPassive || false}
+                                                    onChange={(e) => updatePageAbility(page.id, ability.id, 'isPassive', e.target.checked)}
+                                                    className="w-3 h-3"
+                                                />
+                                                <span className="text-[10px] text-gray-400">Passive</span>
+                                            </label>
+                                        </div>
+                                        <ColoredTextarea value={ability.description} onChange={(val) => updatePageAbility(page.id, ability.id, 'description', val)} placeholder="Description" rows={2} />
+                                    </div>
+                                ))}
+                            </>
+                        )}
+
+                        {/* Block Mode: Advanced Editor */}
+                        {isBlockMode && (
+                            <>
+                                {/* Add Block Dropdown */}
+                                <div className="flex items-center gap-2 mb-3">
+                                    <span className="text-xs text-gray-400">Add Block:</span>
+                                    <div className="flex flex-wrap gap-1">
+                                        <button onClick={() => addBlockToPage(page.id, 'header')} className="px-2 py-1 text-[10px] bg-marvel-metal hover:bg-marvel-border rounded text-gray-300">Header</button>
+                                        <button onClick={() => addBlockToPage(page.id, 'ability')} className="px-2 py-1 text-[10px] bg-marvel-metal hover:bg-marvel-border rounded text-gray-300">Ability</button>
+                                        <button onClick={() => addBlockToPage(page.id, 'attack')} className="px-2 py-1 text-[10px] bg-marvel-metal hover:bg-marvel-border rounded text-gray-300">Attack</button>
+                                        <button onClick={() => addBlockToPage(page.id, 'teamup')} className="px-2 py-1 text-[10px] bg-marvel-metal hover:bg-marvel-border rounded text-gray-300">Team-Up</button>
+                                        <button onClick={() => addBlockToPage(page.id, 'text')} className="px-2 py-1 text-[10px] bg-marvel-metal hover:bg-marvel-border rounded text-gray-300">Text</button>
+                                        <button onClick={() => addBlockToPage(page.id, 'columns')} className="px-2 py-1 text-[10px] bg-marvel-metal hover:bg-marvel-border rounded text-gray-300">Columns</button>
+                                        <button onClick={() => addBlockToPage(page.id, 'divider')} className="px-2 py-1 text-[10px] bg-marvel-metal hover:bg-marvel-border rounded text-gray-300">Divider</button>
                                     </div>
                                 </div>
-                                <input type="text" value={ability.name} onChange={(e) => updatePageAbility(page.id, ability.id, 'name', e.target.value)} placeholder="Name" className="w-full bg-marvel-dark border border-marvel-border rounded px-2 py-1 text-xs text-white mb-1" />
-                                <div className="flex gap-2 mb-1">
-                                    <input type="text" value={ability.hotkey} onChange={(e) => updatePageAbility(page.id, ability.id, 'hotkey', e.target.value)} placeholder="Hotkey" className="w-20 bg-marvel-dark border border-marvel-border rounded px-2 py-1 text-xs text-white" />
-                                    <label className="flex items-center gap-1 cursor-pointer">
-                                        <input
-                                            type="checkbox"
-                                            checked={ability.isPassive || false}
-                                            onChange={(e) => updatePageAbility(page.id, ability.id, 'isPassive', e.target.checked)}
-                                            className="w-3 h-3"
-                                        />
-                                        <span className="text-[10px] text-gray-400">Passive</span>
-                                    </label>
-                                </div>
-                                <ColoredTextarea value={ability.description} onChange={(val) => updatePageAbility(page.id, ability.id, 'description', val)} placeholder="Description" rows={2} />
-                            </div>
-                        ))}
+
+                                {/* Blocks List */}
+                                {(!page.blocks || page.blocks.length === 0) && (
+                                    <p className="text-gray-500 text-xs italic mb-2">No blocks yet. Add blocks above.</p>
+                                )}
+
+                                {page.blocks?.map((block, blockIndex) => (
+                                    <div key={block.id} className="mb-2 p-2 bg-marvel-metal rounded border-l-2 border-marvel-yellow">
+                                        {/* Block Header */}
+                                        <div className="flex items-center justify-between mb-2">
+                                            <span className="text-xs font-bold text-marvel-yellow uppercase">{block.type}</span>
+                                            <div className="flex items-center gap-1">
+                                                {blockIndex > 0 && (
+                                                    <button onClick={() => moveBlock(page.id, block.id, 'up')} className="text-gray-400 hover:text-white p-1">
+                                                        <ChevronUp className="w-3 h-3" />
+                                                    </button>
+                                                )}
+                                                {page.blocks && blockIndex < page.blocks.length - 1 && (
+                                                    <button onClick={() => moveBlock(page.id, block.id, 'down')} className="text-gray-400 hover:text-white p-1">
+                                                        <ChevronDown className="w-3 h-3" />
+                                                    </button>
+                                                )}
+                                                <button onClick={() => removeBlockFromPage(page.id, block.id)} className="text-red-500 hover:text-red-400 p-1">
+                                                    <Trash2 className="w-3 h-3" />
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        {/* Block-specific editors */}
+                                        {block.type === 'header' && (
+                                            <div className="space-y-1">
+                                                <input
+                                                    type="text"
+                                                    value={(block as HeaderBlock).text}
+                                                    onChange={(e) => updateBlock(page.id, block.id, { text: e.target.value })}
+                                                    placeholder="Header Text"
+                                                    className="w-full bg-marvel-dark border border-marvel-border rounded px-2 py-1 text-xs text-white"
+                                                />
+                                                <select
+                                                    value={(block as HeaderBlock).variant}
+                                                    onChange={(e) => updateBlock(page.id, block.id, { variant: e.target.value as HeaderBlock['variant'] })}
+                                                    className="text-xs bg-marvel-dark border border-marvel-border rounded px-2 py-1 text-white"
+                                                >
+                                                    <option value="attacks">Attacks Style</option>
+                                                    <option value="abilities">Abilities Style</option>
+                                                    <option value="teamup">Team-Up Style</option>
+                                                    <option value="custom">Custom</option>
+                                                </select>
+                                            </div>
+                                        )}
+
+                                        {block.type === 'ability' && (
+                                            <div className="space-y-1">
+                                                <div className="flex gap-2 items-start">
+                                                    <IconUpload 
+                                                        icon={(block as AbilityBlock).ability.icon} 
+                                                        onUpload={(url) => updateBlock(page.id, block.id, { ability: { ...(block as AbilityBlock).ability, icon: url } })} 
+                                                        size="sm" 
+                                                    />
+                                                    <div className="flex-1 space-y-1">
+                                                        <input
+                                                            type="text"
+                                                            value={(block as AbilityBlock).ability.name}
+                                                            onChange={(e) => updateBlock(page.id, block.id, { ability: { ...(block as AbilityBlock).ability, name: e.target.value } })}
+                                                            placeholder="Ability Name"
+                                                            className="w-full bg-marvel-dark border border-marvel-border rounded px-2 py-1 text-xs text-white"
+                                                        />
+                                                        <div className="flex gap-2">
+                                                            <input
+                                                                type="text"
+                                                                value={(block as AbilityBlock).ability.hotkey}
+                                                                onChange={(e) => updateBlock(page.id, block.id, { ability: { ...(block as AbilityBlock).ability, hotkey: e.target.value } })}
+                                                                placeholder="Hotkey"
+                                                                className="w-20 bg-marvel-dark border border-marvel-border rounded px-2 py-1 text-xs text-white"
+                                                            />
+                                                            <label className="flex items-center gap-1 cursor-pointer">
+                                                                <input
+                                                                    type="checkbox"
+                                                                    checked={(block as AbilityBlock).ability.isPassive || false}
+                                                                    onChange={(e) => updateBlock(page.id, block.id, { ability: { ...(block as AbilityBlock).ability, isPassive: e.target.checked } })}
+                                                                    className="w-3 h-3"
+                                                                />
+                                                                <span className="text-[10px] text-gray-400">Passive</span>
+                                                            </label>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <ColoredTextarea 
+                                                    value={(block as AbilityBlock).ability.description} 
+                                                    onChange={(val) => updateBlock(page.id, block.id, { ability: { ...(block as AbilityBlock).ability, description: val } })} 
+                                                    placeholder="Description" 
+                                                    rows={2} 
+                                                />
+                                            </div>
+                                        )}
+
+                                        {block.type === 'attack' && (
+                                            <div className="space-y-1">
+                                                <div className="flex gap-2 items-start">
+                                                    <IconUpload 
+                                                        icon={(block as AttackBlock).attack.icon} 
+                                                        onUpload={(url) => updateBlock(page.id, block.id, { attack: { ...(block as AttackBlock).attack, icon: url } })} 
+                                                        size="sm" 
+                                                    />
+                                                    <div className="flex-1 space-y-1">
+                                                        <input
+                                                            type="text"
+                                                            value={(block as AttackBlock).attack.name}
+                                                            onChange={(e) => updateBlock(page.id, block.id, { attack: { ...(block as AttackBlock).attack, name: e.target.value } })}
+                                                            placeholder="Attack Name"
+                                                            className="w-full bg-marvel-dark border border-marvel-border rounded px-2 py-1 text-xs text-white"
+                                                        />
+                                                        <input
+                                                            type="text"
+                                                            value={(block as AttackBlock).attack.hotkey}
+                                                            onChange={(e) => updateBlock(page.id, block.id, { attack: { ...(block as AttackBlock).attack, hotkey: e.target.value } })}
+                                                            placeholder="Hotkey"
+                                                            className="w-20 bg-marvel-dark border border-marvel-border rounded px-2 py-1 text-xs text-white"
+                                                        />
+                                                    </div>
+                                                </div>
+                                                <ColoredTextarea 
+                                                    value={(block as AttackBlock).attack.description} 
+                                                    onChange={(val) => updateBlock(page.id, block.id, { attack: { ...(block as AttackBlock).attack, description: val } })} 
+                                                    placeholder="Description" 
+                                                    rows={2} 
+                                                />
+                                            </div>
+                                        )}
+
+                                        {block.type === 'teamup' && (
+                                            <div className="space-y-1">
+                                                <div className="flex gap-2 items-start">
+                                                    <IconUpload 
+                                                        icon={(block as TeamUpBlock).teamUp.icon} 
+                                                        onUpload={(url) => updateBlock(page.id, block.id, { teamUp: { ...(block as TeamUpBlock).teamUp, icon: url } })} 
+                                                        size="sm" 
+                                                    />
+                                                    <div className="flex-1 space-y-1">
+                                                        <input
+                                                            type="text"
+                                                            value={(block as TeamUpBlock).teamUp.name}
+                                                            onChange={(e) => updateBlock(page.id, block.id, { teamUp: { ...(block as TeamUpBlock).teamUp, name: e.target.value } })}
+                                                            placeholder="Team-Up Name"
+                                                            className="w-full bg-marvel-dark border border-marvel-border rounded px-2 py-1 text-xs text-white"
+                                                        />
+                                                        <div className="flex gap-2">
+                                                            <input
+                                                                type="text"
+                                                                value={(block as TeamUpBlock).teamUp.hotkey}
+                                                                onChange={(e) => updateBlock(page.id, block.id, { teamUp: { ...(block as TeamUpBlock).teamUp, hotkey: e.target.value } })}
+                                                                placeholder="Hotkey"
+                                                                className="w-20 bg-marvel-dark border border-marvel-border rounded px-2 py-1 text-xs text-white"
+                                                            />
+                                                            <label className="flex items-center gap-1 cursor-pointer">
+                                                                <input
+                                                                    type="checkbox"
+                                                                    checked={(block as TeamUpBlock).teamUp.isPassive || false}
+                                                                    onChange={(e) => updateBlock(page.id, block.id, { teamUp: { ...(block as TeamUpBlock).teamUp, isPassive: e.target.checked } })}
+                                                                    className="w-3 h-3"
+                                                                />
+                                                                <span className="text-[10px] text-gray-400">Passive</span>
+                                                            </label>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <ColoredTextarea 
+                                                    value={(block as TeamUpBlock).teamUp.description} 
+                                                    onChange={(val) => updateBlock(page.id, block.id, { teamUp: { ...(block as TeamUpBlock).teamUp, description: val } })} 
+                                                    placeholder="Description" 
+                                                    rows={2} 
+                                                />
+                                            </div>
+                                        )}
+
+                                        {block.type === 'text' && (
+                                            <div className="space-y-1">
+                                                <select
+                                                    value={(block as TextBlock).size}
+                                                    onChange={(e) => updateBlock(page.id, block.id, { size: e.target.value as TextBlock['size'] })}
+                                                    className="text-xs bg-marvel-dark border border-marvel-border rounded px-2 py-1 text-white"
+                                                >
+                                                    <option value="sm">Small</option>
+                                                    <option value="md">Medium</option>
+                                                    <option value="lg">Large</option>
+                                                </select>
+                                                <ColoredTextarea 
+                                                    value={(block as TextBlock).content} 
+                                                    onChange={(val) => updateBlock(page.id, block.id, { content: val })} 
+                                                    placeholder="Text content..." 
+                                                    rows={3} 
+                                                />
+                                            </div>
+                                        )}
+
+                                        {block.type === 'divider' && (
+                                            <p className="text-xs text-gray-500 italic">Horizontal divider line</p>
+                                        )}
+
+                                        {block.type === 'columns' && (
+                                            <div className="space-y-2">
+                                                {(block as ColumnsBlock).columns.map((column, colIndex) => (
+                                                    <div key={column.id} className="p-2 bg-marvel-dark rounded border border-marvel-border">
+                                                        <div className="flex items-center gap-2 mb-2">
+                                                            <span className="text-[10px] text-gray-400">Column {colIndex + 1}</span>
+                                                            <input
+                                                                type="text"
+                                                                value={column.title || ''}
+                                                                onChange={(e) => updateColumn(page.id, block.id, column.id, { title: e.target.value })}
+                                                                placeholder="Column Title"
+                                                                className="flex-1 bg-marvel-metal border border-marvel-border rounded px-2 py-0.5 text-xs text-white"
+                                                            />
+                                                            <IconUpload 
+                                                                icon={column.icon} 
+                                                                onUpload={(url) => updateColumn(page.id, block.id, column.id, { icon: url })} 
+                                                                size="sm" 
+                                                            />
+                                                        </div>
+                                                        <div className="flex items-center gap-1 mb-2">
+                                                            <span className="text-[9px] text-gray-500">Icon Size:</span>
+                                                            <input
+                                                                type="range"
+                                                                min="0.5"
+                                                                max="1.5"
+                                                                step="0.1"
+                                                                value={column.iconScale || 1}
+                                                                onChange={(e) => updateColumn(page.id, block.id, column.id, { iconScale: parseFloat(e.target.value) })}
+                                                                className="flex-1 h-1 bg-marvel-dark rounded-lg appearance-none cursor-pointer accent-marvel-yellow"
+                                                            />
+                                                            <span className="text-[9px] text-marvel-yellow w-6">{column.iconScale || 1}</span>
+                                                        </div>
+                                                        
+                                                        {/* Add block to column */}
+                                                        <div className="flex flex-wrap gap-1 mb-2">
+                                                            <button onClick={() => addBlockToColumn(page.id, block.id, column.id, 'ability')} className="px-1 py-0.5 text-[9px] bg-marvel-metal hover:bg-marvel-border rounded text-gray-400">+Ability</button>
+                                                            <button onClick={() => addBlockToColumn(page.id, block.id, column.id, 'attack')} className="px-1 py-0.5 text-[9px] bg-marvel-metal hover:bg-marvel-border rounded text-gray-400">+Attack</button>
+                                                            <button onClick={() => addBlockToColumn(page.id, block.id, column.id, 'text')} className="px-1 py-0.5 text-[9px] bg-marvel-metal hover:bg-marvel-border rounded text-gray-400">+Text</button>
+                                                            <button onClick={() => addBlockToColumn(page.id, block.id, column.id, 'header')} className="px-1 py-0.5 text-[9px] bg-marvel-metal hover:bg-marvel-border rounded text-gray-400">+Header</button>
+                                                        </div>
+
+                                                        {/* Column blocks */}
+                                                        {column.blocks.map((colBlock) => (
+                                                            <div key={colBlock.id} className="mb-1 p-1 bg-marvel-metal rounded text-xs">
+                                                                <div className="flex items-center justify-between mb-1">
+                                                                    <span className="text-[10px] text-marvel-yellow">{colBlock.type}</span>
+                                                                    <button onClick={() => removeBlockFromColumn(page.id, block.id, column.id, colBlock.id)} className="text-red-500 hover:text-red-400">
+                                                                        <Trash2 className="w-2.5 h-2.5" />
+                                                                    </button>
+                                                                </div>
+                                                                
+                                                                {/* Simplified inline editors for column blocks */}
+                                                                {colBlock.type === 'header' && (
+                                                                    <input
+                                                                        type="text"
+                                                                        value={(colBlock as HeaderBlock).text}
+                                                                        onChange={(e) => updateColumnBlock(page.id, block.id, column.id, colBlock.id, { text: e.target.value })}
+                                                                        placeholder="Header"
+                                                                        className="w-full bg-marvel-dark border border-marvel-border rounded px-1 py-0.5 text-[10px] text-white"
+                                                                    />
+                                                                )}
+                                                                {colBlock.type === 'ability' && (
+                                                                    <div className="space-y-0.5">
+                                                                        <div className="flex gap-1 items-start">
+                                                                            <IconUpload 
+                                                                                icon={(colBlock as AbilityBlock).ability.icon} 
+                                                                                onUpload={(url) => updateColumnBlock(page.id, block.id, column.id, colBlock.id, { ability: { ...(colBlock as AbilityBlock).ability, icon: url } })} 
+                                                                                size="sm" 
+                                                                            />
+                                                                            <input
+                                                                                type="text"
+                                                                                value={(colBlock as AbilityBlock).ability.name}
+                                                                                onChange={(e) => updateColumnBlock(page.id, block.id, column.id, colBlock.id, { ability: { ...(colBlock as AbilityBlock).ability, name: e.target.value } })}
+                                                                                placeholder="Name"
+                                                                                className="flex-1 bg-marvel-dark border border-marvel-border rounded px-1 py-0.5 text-[10px] text-white"
+                                                                            />
+                                                                        </div>
+                                                                        <div className="flex items-center gap-1">
+                                                                            <span className="text-[9px] text-gray-500">Size:</span>
+                                                                            <input
+                                                                                type="range"
+                                                                                min="0.5"
+                                                                                max="1.5"
+                                                                                step="0.1"
+                                                                                value={(colBlock as AbilityBlock).ability.iconScale || 1}
+                                                                                onChange={(e) => updateColumnBlock(page.id, block.id, column.id, colBlock.id, { ability: { ...(colBlock as AbilityBlock).ability, iconScale: parseFloat(e.target.value) } })}
+                                                                                className="flex-1 h-1 bg-marvel-dark rounded-lg appearance-none cursor-pointer accent-marvel-yellow"
+                                                                            />
+                                                                            <span className="text-[9px] text-marvel-yellow w-6">{(colBlock as AbilityBlock).ability.iconScale || 1}</span>
+                                                                        </div>
+                                                                        <textarea
+                                                                            value={(colBlock as AbilityBlock).ability.description}
+                                                                            onChange={(e) => updateColumnBlock(page.id, block.id, column.id, colBlock.id, { ability: { ...(colBlock as AbilityBlock).ability, description: e.target.value } })}
+                                                                            placeholder="Description"
+                                                                            className="w-full bg-marvel-dark border border-marvel-border rounded px-1 py-0.5 text-[10px] text-white resize-none"
+                                                                            rows={2}
+                                                                        />
+                                                                    </div>
+                                                                )}
+                                                                {colBlock.type === 'attack' && (
+                                                                    <div className="space-y-0.5">
+                                                                        <div className="flex gap-1 items-start">
+                                                                            <IconUpload 
+                                                                                icon={(colBlock as AttackBlock).attack.icon} 
+                                                                                onUpload={(url) => updateColumnBlock(page.id, block.id, column.id, colBlock.id, { attack: { ...(colBlock as AttackBlock).attack, icon: url } })} 
+                                                                                size="sm" 
+                                                                            />
+                                                                            <input
+                                                                                type="text"
+                                                                                value={(colBlock as AttackBlock).attack.name}
+                                                                                onChange={(e) => updateColumnBlock(page.id, block.id, column.id, colBlock.id, { attack: { ...(colBlock as AttackBlock).attack, name: e.target.value } })}
+                                                                                placeholder="Name"
+                                                                                className="flex-1 bg-marvel-dark border border-marvel-border rounded px-1 py-0.5 text-[10px] text-white"
+                                                                            />
+                                                                        </div>
+                                                                        <div className="flex items-center gap-1">
+                                                                            <span className="text-[9px] text-gray-500">Size:</span>
+                                                                            <input
+                                                                                type="range"
+                                                                                min="0.5"
+                                                                                max="1.5"
+                                                                                step="0.1"
+                                                                                value={(colBlock as AttackBlock).attack.iconScale || 1}
+                                                                                onChange={(e) => updateColumnBlock(page.id, block.id, column.id, colBlock.id, { attack: { ...(colBlock as AttackBlock).attack, iconScale: parseFloat(e.target.value) } })}
+                                                                                className="flex-1 h-1 bg-marvel-dark rounded-lg appearance-none cursor-pointer accent-marvel-yellow"
+                                                                            />
+                                                                            <span className="text-[9px] text-marvel-yellow w-6">{(colBlock as AttackBlock).attack.iconScale || 1}</span>
+                                                                        </div>
+                                                                        <textarea
+                                                                            value={(colBlock as AttackBlock).attack.description}
+                                                                            onChange={(e) => updateColumnBlock(page.id, block.id, column.id, colBlock.id, { attack: { ...(colBlock as AttackBlock).attack, description: e.target.value } })}
+                                                                            placeholder="Description"
+                                                                            className="w-full bg-marvel-dark border border-marvel-border rounded px-1 py-0.5 text-[10px] text-white resize-none"
+                                                                            rows={2}
+                                                                        />
+                                                                    </div>
+                                                                )}
+                                                                {colBlock.type === 'text' && (
+                                                                    <textarea
+                                                                        value={(colBlock as TextBlock).content}
+                                                                        onChange={(e) => updateColumnBlock(page.id, block.id, column.id, colBlock.id, { content: e.target.value })}
+                                                                        placeholder="Text"
+                                                                        className="w-full bg-marvel-dark border border-marvel-border rounded px-1 py-0.5 text-[10px] text-white resize-none"
+                                                                        rows={2}
+                                                                    />
+                                                                )}
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                ))}
+                            </>
+                        )}
                     </div>
-                ))}
+                    );
+                })}
             </CollapsibleSection>
             </>
             )}
@@ -2427,6 +3101,19 @@ const FormEditor: React.FC<FormEditorProps> = ({ heroData, onChange, displaySett
                         setShowLogoCropEditor(false);
                     }}
                     onCancel={() => setShowLogoCropEditor(false)}
+                />
+            )}
+
+            {/* Page 1 Icon Crop Editor Modal */}
+            {showMainPageIconCrop && heroData.mainPageIcon && (
+                <ImageCropEditor
+                    imageUrl={heroData.mainPageIcon}
+                    initialCrop={heroData.mainPageIconCrop || getDefaultCropBounds()}
+                    onApply={(crop) => {
+                        onChange({ ...heroData, mainPageIconCrop: crop });
+                        setShowMainPageIconCrop(false);
+                    }}
+                    onCancel={() => setShowMainPageIconCrop(false)}
                 />
             )}
 

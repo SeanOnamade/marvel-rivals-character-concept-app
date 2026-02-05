@@ -1,5 +1,17 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { HeroData, DisplaySettings, ContentPage } from '../types';
+import { 
+    HeroData, 
+    DisplaySettings, 
+    ContentPage,
+    PageBlock,
+    HeaderBlock,
+    AbilityBlock,
+    AttackBlock,
+    TeamUpBlock,
+    TextBlock,
+    ColumnsBlock,
+    CropBounds,
+} from '../types';
 import HeroPortrait from './HeroPortrait';
 import DifficultyStars from './DifficultyStars';
 import { parseColoredText } from '../utils';
@@ -246,14 +258,6 @@ const HotkeyLabel: React.FC<HotkeyLabelProps> = ({ hotkey, glow = false }) => {
     );
 };
 
-// Crop bounds interface
-interface CropBounds {
-    top: number;
-    left: number;
-    right: number;
-    bottom: number;
-}
-
 // Small partner icon (for team-ups) with optional cropping
 interface PartnerIconProps {
     icon?: string;
@@ -313,18 +317,66 @@ interface PageIndicatorProps {
     pages: ContentPage[];
     currentPage: number;
     onPageChange: (page: number) => void;
+    mainPageIcon?: string;
+    mainPageIconCrop?: CropBounds;
 }
 
-const PageIndicator: React.FC<PageIndicatorProps> = ({ pages, currentPage, onPageChange }) => {
+const PageIndicator: React.FC<PageIndicatorProps> = ({ pages, currentPage, onPageChange, mainPageIcon, mainPageIconCrop }) => {
     if (pages.length === 0) return null;
+    
+    // Render cropped page 1 icon
+    const renderPage1Icon = () => {
+        if (!mainPageIcon) {
+            return <span className="text-xs text-white">1</span>;
+        }
+        
+        const hasCrop = mainPageIconCrop && (mainPageIconCrop.top > 0 || mainPageIconCrop.left > 0 || mainPageIconCrop.right > 0 || mainPageIconCrop.bottom > 0);
+        
+        if (!hasCrop) {
+            return <img src={mainPageIcon} alt="" className="w-full h-full object-cover" />;
+        }
+        
+        // Calculate the visible region percentages
+        const visibleWidth = 100 - mainPageIconCrop!.left - mainPageIconCrop!.right;
+        const visibleHeight = 100 - mainPageIconCrop!.top - mainPageIconCrop!.bottom;
+        
+        // Scale factor to fill container (use max to ensure coverage)
+        const scale = Math.max(100 / visibleWidth, 100 / visibleHeight);
+        
+        // Center of visible region
+        const centerX = mainPageIconCrop!.left + visibleWidth / 2;
+        const centerY = mainPageIconCrop!.top + visibleHeight / 2;
+        
+        // Transform to position the cropped center at container center
+        const translateX = (50 - centerX) * scale;
+        const translateY = (50 - centerY) * scale;
+        
+        return (
+            <div className="w-full h-full relative overflow-hidden">
+                <img 
+                    src={mainPageIcon} 
+                    alt="" 
+                    className="absolute"
+                    style={{
+                        width: `${scale * 100}%`,
+                        height: `${scale * 100}%`,
+                        left: '50%',
+                        top: '50%',
+                        transform: `translate(-50%, -50%) translate(${translateX}%, ${translateY}%)`,
+                        objectFit: 'cover',
+                    }}
+                />
+            </div>
+        );
+    };
     
     return (
         <div className="flex items-center gap-1 mb-3">
             <button
                 onClick={() => onPageChange(0)}
-                className={`w-8 h-8 border ${currentPage === 0 ? 'border-yellow-500 bg-yellow-500/20' : 'border-gray-600 bg-black/40'} flex items-center justify-center`}
+                className={`w-8 h-8 border ${currentPage === 0 ? 'border-yellow-500 bg-yellow-500/20' : 'border-gray-600 bg-black/40'} flex items-center justify-center overflow-hidden`}
             >
-                <span className="text-xs text-white">1</span>
+                {renderPage1Icon()}
             </button>
             
             {pages.map((page, idx) => (
@@ -342,8 +394,153 @@ const PageIndicator: React.FC<PageIndicatorProps> = ({ pages, currentPage, onPag
             ))}
             
             <div className="flex items-center gap-1 ml-2">
-                <span className="text-xs text-gray-400">Scroll</span>
+                <span className="text-xs text-black font-bold bg-yellow-500 px-1.5 py-0.5" style={{ transform: 'skewX(-10deg)' }}>Scroll</span>
             </div>
+        </div>
+    );
+};
+
+// ============================================
+// Block Rendering Components (for page builder)
+// ============================================
+
+// Header block renderer - renders section headers like "ATTACKS" or "ABILITIES"
+const HeaderBlockRenderer: React.FC<{ block: HeaderBlock }> = ({ block }) => {
+    return (
+        <div className="flex items-center gap-3 mb-4">
+            <h2 className="text-2xl font-bold uppercase tracking-wider text-white whitespace-nowrap">
+                {block.text}
+            </h2>
+            <div className="flex-1 h-px bg-gray-600"></div>
+        </div>
+    );
+};
+
+// Ability block renderer - renders a single ability with diamond icon
+const AbilityBlockRenderer: React.FC<{ block: AbilityBlock; getHotkey: (pc: string, console?: string) => string }> = ({ block, getHotkey }) => {
+    const { ability } = block;
+    return (
+        <div className="flex gap-4 items-start">
+            <div className="flex flex-col items-center w-14 flex-shrink-0">
+                <AbilityIcon icon={ability.icon} iconScale={ability.iconScale} size="md" />
+                {ability.isPassive ? (
+                    <HotkeyLabel hotkey="PASSIVE" />
+                ) : (
+                    <HotkeyLabel hotkey={getHotkey(ability.hotkey, ability.hotkeyConsole)} />
+                )}
+            </div>
+            <div className="flex-1 min-w-0 pt-1">
+                <h4 className="text-base font-bold uppercase tracking-wide text-white mb-1">
+                    {ability.name}
+                </h4>
+                <p className="text-sm text-gray-300 leading-relaxed">
+                    <ColoredText text={ability.description} />
+                </p>
+            </div>
+        </div>
+    );
+};
+
+// Attack block renderer - renders a single attack with rectangle icon
+const AttackBlockRenderer: React.FC<{ block: AttackBlock; getHotkey: (pc: string, console?: string) => string }> = ({ block, getHotkey }) => {
+    const { attack } = block;
+    return (
+        <div className="flex gap-4 items-start">
+            <div className="flex flex-col items-center">
+                <AttackIcon icon={attack.icon} iconScale={attack.iconScale} size="md" />
+                <HotkeyLabel hotkey={getHotkey(attack.hotkey, attack.hotkeyConsole)} />
+            </div>
+            <div className="flex-1 min-w-0 pt-1">
+                <h4 className="text-base font-bold uppercase tracking-wide text-white mb-1">
+                    {attack.name}
+                </h4>
+                <p className="text-sm text-gray-300 leading-relaxed">
+                    <ColoredText text={attack.description} />
+                </p>
+            </div>
+        </div>
+    );
+};
+
+// Team-up block renderer - renders a single team-up ability
+const TeamUpBlockRenderer: React.FC<{ block: TeamUpBlock; getHotkey: (pc: string, console?: string) => string }> = ({ block, getHotkey }) => {
+    const { teamUp } = block;
+    return (
+        <div className="flex gap-4 items-start">
+            <div className="flex flex-col items-center">
+                <TeamUpIcon icon={teamUp.icon} iconScale={teamUp.iconScale} size="md" />
+                {teamUp.isPassive ? (
+                    <HotkeyLabel hotkey="PASSIVE" />
+                ) : (
+                    <HotkeyLabel hotkey={getHotkey(teamUp.hotkey, teamUp.hotkeyConsole)} />
+                )}
+            </div>
+            <div className="flex-1 min-w-0 pt-1">
+                <h4 className="text-base font-bold uppercase tracking-wide text-white mb-1">
+                    {teamUp.name}
+                </h4>
+                <p className="text-sm text-gray-300 leading-relaxed">
+                    <ColoredText text={teamUp.description} />
+                </p>
+                {/* Partner icons */}
+                {teamUp.partnerIcons && teamUp.partnerIcons.length > 0 && (
+                    <div className="flex gap-1 mt-2">
+                        {teamUp.partnerIcons.map((icon, idx) => (
+                            <PartnerIcon key={idx} icon={icon} />
+                        ))}
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+};
+
+// Text block renderer - renders rich text content
+const TextBlockRenderer: React.FC<{ block: TextBlock }> = ({ block }) => {
+    const sizeClasses = {
+        sm: 'text-xs',
+        md: 'text-sm',
+        lg: 'text-base',
+    };
+    return (
+        <p className={`${sizeClasses[block.size]} text-gray-300 leading-relaxed`}>
+            <ColoredText text={block.content} />
+        </p>
+    );
+};
+
+// Divider block renderer
+const DividerBlockRenderer: React.FC = () => {
+    return <div className="border-t border-gray-600 my-4"></div>;
+};
+
+// Columns block renderer - renders side-by-side columns (like Gambit's modes)
+interface ColumnsBlockRendererProps {
+    block: ColumnsBlock;
+    renderBlock: (block: PageBlock) => React.ReactNode;
+}
+
+const ColumnsBlockRenderer: React.FC<ColumnsBlockRendererProps> = ({ block, renderBlock }) => {
+    return (
+        <div className="grid grid-cols-2 gap-6">
+            {block.columns.map((column) => (
+                <div key={column.id} className="space-y-4">
+                    {column.title && (
+                        <div className="flex items-center gap-3 mb-5">
+                            {/* Use AbilityIcon for diamond shape with background */}
+                            <AbilityIcon icon={column.icon} iconScale={column.iconScale} size="md" />
+                            <h3 className="text-xl font-bold uppercase tracking-wider text-white">
+                                {column.title}
+                            </h3>
+                        </div>
+                    )}
+                    {column.blocks.map((innerBlock) => (
+                        <div key={innerBlock.id}>
+                            {renderBlock(innerBlock)}
+                        </div>
+                    ))}
+                </div>
+            ))}
         </div>
     );
 };
@@ -624,38 +821,94 @@ const AbilityPageRenderer = React.forwardRef<HTMLDivElement, AbilityPageRenderer
             </>
         );
 
-        // Render additional page content
-        const renderAdditionalPage = (page: ContentPage) => (
-            <div className="flex-1 pt-2">
-                <div className="flex items-center gap-3 mb-5">
-                    <h2 className="text-2xl font-bold uppercase tracking-wider text-white">{page.title}</h2>
-                    <div className="flex-1 h-px bg-gray-600"></div>
-                </div>
-                
-                <div className="grid grid-cols-2 gap-6">
-                    {page.abilities.map((ability) => (
-                        <div key={ability.id} className="flex gap-4 items-start">
-                            <div className="flex flex-col items-center">
-                                <AbilityIcon icon={ability.icon} iconScale={ability.iconScale} size="md" />
-                                {ability.isPassive ? (
-                                    <HotkeyLabel hotkey="PASSIVE" />
-                                ) : (
-                                    <HotkeyLabel hotkey={getHotkey(ability.hotkey, ability.hotkeyConsole)} />
-                                )}
+        // Render a single block (for block-based pages)
+        const renderBlock = (block: PageBlock): React.ReactNode => {
+            switch (block.type) {
+                case 'header':
+                    return <HeaderBlockRenderer block={block as HeaderBlock} />;
+                case 'ability':
+                    return <AbilityBlockRenderer block={block as AbilityBlock} getHotkey={getHotkey} />;
+                case 'attack':
+                    return <AttackBlockRenderer block={block as AttackBlock} getHotkey={getHotkey} />;
+                case 'teamup':
+                    return <TeamUpBlockRenderer block={block as TeamUpBlock} getHotkey={getHotkey} />;
+                case 'text':
+                    return <TextBlockRenderer block={block as TextBlock} />;
+                case 'divider':
+                    return <DividerBlockRenderer />;
+                case 'columns':
+                    return <ColumnsBlockRenderer block={block as ColumnsBlock} renderBlock={renderBlock} />;
+                default:
+                    return null;
+            }
+        };
+
+        // Render block-based page content
+        const renderBlocksPage = (page: ContentPage) => {
+            const layoutClass = page.layout === 'two-column' 
+                ? 'grid grid-cols-2 gap-6' 
+                : 'flex flex-col gap-4';
+            
+            return (
+                <div className="flex-1 pt-2">
+                    {/* Page title header */}
+                    <div className="flex items-center gap-3 mb-5">
+                        <h2 className="text-2xl font-bold uppercase tracking-wider text-white">{page.title}</h2>
+                        <div className="flex-1 h-px bg-gray-600"></div>
+                    </div>
+                    
+                    {/* Block content */}
+                    <div className={layoutClass}>
+                        {page.blocks!.map((block) => (
+                            <div key={block.id}>
+                                {renderBlock(block)}
                             </div>
-                            <div className="flex-1 min-w-0 pt-2">
-                                <h4 className="text-sm font-bold uppercase tracking-wide text-white mb-1">
-                                    {ability.name}
-                                </h4>
-                                <p className="text-xs text-gray-400 leading-relaxed">
-                                    <ColoredText text={ability.description} />
-                                </p>
-                            </div>
-                        </div>
-                    ))}
+                        ))}
+                    </div>
                 </div>
-            </div>
-        );
+            );
+        };
+
+        // Render additional page content (with fallback for legacy abilities-only pages)
+        const renderAdditionalPage = (page: ContentPage) => {
+            // NEW: Use blocks if available
+            if (page.blocks && page.blocks.length > 0) {
+                return renderBlocksPage(page);
+            }
+            
+            // LEGACY: Render using abilities array (unchanged for backward compatibility)
+            return (
+                <div className="flex-1 pt-2">
+                    <div className="flex items-center gap-3 mb-5">
+                        <h2 className="text-2xl font-bold uppercase tracking-wider text-white">{page.title}</h2>
+                        <div className="flex-1 h-px bg-gray-600"></div>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-6">
+                        {page.abilities.map((ability) => (
+                            <div key={ability.id} className="flex gap-4 items-start">
+                                <div className="flex flex-col items-center">
+                                    <AbilityIcon icon={ability.icon} iconScale={ability.iconScale} size="md" />
+                                    {ability.isPassive ? (
+                                        <HotkeyLabel hotkey="PASSIVE" />
+                                    ) : (
+                                        <HotkeyLabel hotkey={getHotkey(ability.hotkey, ability.hotkeyConsole)} />
+                                    )}
+                                </div>
+                                <div className="flex-1 min-w-0 pt-2">
+                                    <h4 className="text-sm font-bold uppercase tracking-wide text-white mb-1">
+                                        {ability.name}
+                                    </h4>
+                                    <p className="text-xs text-gray-400 leading-relaxed">
+                                        <ColoredText text={ability.description} />
+                                    </p>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            );
+        };
 
         // Background image source
         const backgroundImage = displaySettings.customBackground || '/backgrounds/q80thme87oag1.jpg';
@@ -946,6 +1199,8 @@ const AbilityPageRenderer = React.forwardRef<HTMLDivElement, AbilityPageRenderer
                                     pages={heroData.additionalPages}
                                     currentPage={currentPage}
                                     onPageChange={handlePageChange}
+                                    mainPageIcon={heroData.mainPageIcon}
+                                    mainPageIconCrop={heroData.mainPageIconCrop}
                                 />
                             )}
                             
@@ -960,24 +1215,6 @@ const AbilityPageRenderer = React.forwardRef<HTMLDivElement, AbilityPageRenderer
                                 <DifficultyStars difficulty={heroData.difficulty} />
                             </div>
                             
-                            {/* Team-up Anchor */}
-                            {heroData.teamUpAnchor?.enabled && (
-                                <div className="mt-4">
-                                    <div className="flex items-center gap-2">
-                                        <img 
-                                            src="/ui/team-up-anchor.png" 
-                                            alt="" 
-                                            className="h-5 object-contain"
-                                        />
-                                    </div>
-                                    <p className="text-xs text-gray-300 mt-1">
-                                        {heroData.teamUpAnchor.bonusText}
-                                    </p>
-                                    <p className="text-[10px] text-gray-500">
-                                        (Season Bonuses are always in effect, even without active Team-Ups.)
-                                    </p>
-                                </div>
-                            )}
                             
                             {/* Role Badge */}
                             {displaySettings.showRoleBadge && (
@@ -993,17 +1230,28 @@ const AbilityPageRenderer = React.forwardRef<HTMLDivElement, AbilityPageRenderer
                     </div>
 
                     {/* RIGHT CONTENT AREA - Attacks & Abilities (70% width) - centered vertically */}
-                    <div 
-                        className="w-[70%] flex p-5 pl-4 pt-24"
-                        style={{
-                            transform: `translateY(${-(displaySettings.contentOffsetY || 0)}px)`,
-                        }}
-                    >
-                        {currentPage === 0 ? renderMainPage() : (
-                            heroData.additionalPages && heroData.additionalPages[currentPage - 1] && 
-                            renderAdditionalPage(heroData.additionalPages[currentPage - 1])
-                        )}
-                    </div>
+                    {(() => {
+                        // Determine content offset: use page-specific offset if on additional page, else global
+                        const currentAdditionalPage = currentPage > 0 && heroData.additionalPages 
+                            ? heroData.additionalPages[currentPage - 1] 
+                            : null;
+                        const contentOffset = currentAdditionalPage?.contentOffsetY !== undefined 
+                            ? currentAdditionalPage.contentOffsetY 
+                            : (displaySettings.contentOffsetY || 0);
+                        
+                        return (
+                            <div 
+                                className="w-[70%] flex p-5 pl-4 pt-24"
+                                style={{
+                                    transform: `translateY(${-contentOffset}px)`,
+                                }}
+                            >
+                                {currentPage === 0 ? renderMainPage() : (
+                                    currentAdditionalPage && renderAdditionalPage(currentAdditionalPage)
+                                )}
+                            </div>
+                        );
+                    })()}
                 </div>
 
                 {/* Watermark - only visible in exported images */}

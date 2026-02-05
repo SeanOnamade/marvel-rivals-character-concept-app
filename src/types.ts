@@ -41,6 +41,7 @@ export interface TeamUpAbility {
     hotkeyConsole?: string;
     icon?: string;
     iconScale?: number; // Icon scale (0.5 to 2, default 1)
+    iconCrop?: CropBounds; // Crop for the team-up icon
     isPassive?: boolean; // Team-ups can be passive too
     isAnchor?: boolean; // true = hero is anchor, false = hero is secondary (default: true)
     anchorIcon?: string; // Icon for the anchor hero (if current hero is not anchor)
@@ -56,8 +57,84 @@ export interface ContentPage {
     id: string;
     title: string;
     icon?: string;
-    abilities: Ability[];
+    abilities: Ability[];  // KEEP for backward compatibility
+    blocks?: PageBlock[];  // NEW: Optional block-based content
+    layout?: 'single' | 'two-column'; // NEW: Page layout option
+    contentOffsetY?: number; // Per-page vertical offset (-100 to 100, default 0)
 }
+
+// ============================================
+// Page Block Types (for flexible page builder)
+// ============================================
+
+export type PageBlockType = 'header' | 'ability' | 'attack' | 'teamup' | 'text' | 'columns' | 'divider';
+
+export interface PageBlockBase {
+    id: string;
+    type: PageBlockType;
+}
+
+// Section header block (renders "ATTACKS" or "ABILITIES" style header with line)
+export interface HeaderBlock extends PageBlockBase {
+    type: 'header';
+    text: string;
+    variant: 'attacks' | 'abilities' | 'teamup' | 'custom';
+}
+
+// Ability block with diamond icon
+export interface AbilityBlock extends PageBlockBase {
+    type: 'ability';
+    ability: Ability;
+}
+
+// Attack block with rectangle icon
+export interface AttackBlock extends PageBlockBase {
+    type: 'attack';
+    attack: Attack;
+}
+
+// Team-up ability block
+export interface TeamUpBlock extends PageBlockBase {
+    type: 'teamup';
+    teamUp: TeamUpAbility;
+}
+
+// Rich text block
+export interface TextBlock extends PageBlockBase {
+    type: 'text';
+    content: string; // Supports [green], [blue], [orange] color tags
+    size: 'sm' | 'md' | 'lg';
+}
+
+// Column data for columns block
+export interface ColumnData {
+    id: string;
+    title?: string;
+    icon?: string;
+    iconScale?: number;
+    blocks: PageBlock[];
+}
+
+// Two-column layout block (for side-by-side content like Gambit's modes)
+export interface ColumnsBlock extends PageBlockBase {
+    type: 'columns';
+    columns: ColumnData[];
+}
+
+// Horizontal divider
+export interface DividerBlock extends PageBlockBase {
+    type: 'divider';
+}
+
+// Union type for all page blocks
+export type PageBlock = 
+    | HeaderBlock 
+    | AbilityBlock 
+    | AttackBlock 
+    | TeamUpBlock 
+    | TextBlock 
+    | ColumnsBlock 
+    | DividerBlock;
 
 // Fold/edge settings for the banner
 export interface FoldSettings {
@@ -139,16 +216,14 @@ export interface HeroData {
     portraitSettings: HeroImageSettings; // Position and size controls
     heroInfoSettings: HeroInfoSettings; // Name/difficulty position controls
     bannerColor: string; // Base color for the gradient banner
+    mainPageIcon?: string; // Icon for page 1 in page indicator
+    mainPageIconCrop?: CropBounds; // Crop for main page icon
     attacks: Attack[]; // 1+ attacks
     teamUpAbilities: TeamUpAbility[]; // 0+ team-ups (separate from passives)
     abilities: Ability[]; // 1+ abilities with custom hotkeys
     passives: Ability[]; // 0+ passives (appear at bottom of abilities column)
     ultimate: Ability; // Appears at TOP of abilities column
     additionalPages: ContentPage[]; // Additional pages (like Gambit's card forms)
-    teamUpAnchor?: { // Team-up anchor info shown at bottom
-        enabled: boolean;
-        bonusText: string;
-    };
 }
 
 // Helper to generate unique IDs
@@ -245,6 +320,59 @@ export const createDefaultTeamUp = (): TeamUpAbility => ({
     hotkey: 'Z',
     hotkeyConsole: CONSOLE_TEAMUP_DEFAULT, // Team-ups always D-Pad on console
     isAnchor: true, // Hero is anchor by default
+});
+
+// ============================================
+// Block creation helpers (for page builder)
+// ============================================
+
+export const createDefaultHeaderBlock = (text: string = 'SECTION', variant: HeaderBlock['variant'] = 'custom'): HeaderBlock => ({
+    id: generateId(),
+    type: 'header',
+    text,
+    variant,
+});
+
+export const createDefaultAbilityBlock = (): AbilityBlock => ({
+    id: generateId(),
+    type: 'ability',
+    ability: createDefaultAbility(),
+});
+
+export const createDefaultAttackBlock = (): AttackBlock => ({
+    id: generateId(),
+    type: 'attack',
+    attack: createDefaultAttack(),
+});
+
+export const createDefaultTeamUpBlock = (): TeamUpBlock => ({
+    id: generateId(),
+    type: 'teamup',
+    teamUp: createDefaultTeamUp(),
+});
+
+export const createDefaultTextBlock = (): TextBlock => ({
+    id: generateId(),
+    type: 'text',
+    content: 'Text content goes here.',
+    size: 'md',
+});
+
+export const createDefaultColumnData = (): ColumnData => ({
+    id: generateId(),
+    title: 'Column Title',
+    blocks: [],
+});
+
+export const createDefaultColumnsBlock = (): ColumnsBlock => ({
+    id: generateId(),
+    type: 'columns',
+    columns: [createDefaultColumnData(), createDefaultColumnData()],
+});
+
+export const createDefaultDividerBlock = (): DividerBlock => ({
+    id: generateId(),
+    type: 'divider',
 });
 
 export const getDefaultFoldSettings = (): FoldSettings => ({
@@ -366,10 +494,6 @@ export const getDefaultHeroData = (): HeroData => ({
         hotkeyConsole: 'L3+R3',
     },
     additionalPages: [],
-    teamUpAnchor: {
-        enabled: false,
-        bonusText: '+5% Healing Bonus',
-    },
 });
 
 // Preset templates
@@ -494,10 +618,6 @@ export const getDoctorStrangePreset = (): HeroData => ({
         icon: '/icons/doctor-strange/eye-of-agamotto.png',
     },
     additionalPages: [],
-    teamUpAnchor: {
-        enabled: false,
-        bonusText: '',
-    },
 });
 
 // Preset with optional display settings
@@ -623,10 +743,194 @@ export const getSpotPreset = (): HeroData => ({
         icon: '/icons/doctor-strange/eye-of-agamotto.png',
     },
     additionalPages: [],
-    teamUpAnchor: {
-        enabled: false,
-        bonusText: '',
+});
+
+export const getGambitPreset = (): HeroData => ({
+    name: 'GAMBIT',
+    role: 'Strategist',
+    difficulty: 4,
+    bannerColor: '#fe2aec', // Pink/Magenta
+    portraitImage: '/heroes/gambit.png',
+    heroLogo: '/heroes/gambit-logo.png',
+    heroLogoSettings: {
+        offsetX: -60,
+        offsetY: 54,
+        scale: 1.3,
     },
+    mainPageIcon: '/hero-icons/gambit_avatar.png', // Page 1 icon
+    portraitSettings: {
+        scale: 1.2,
+        offsetX: 0,
+        offsetY: 21,
+        fadeAmount: 50,
+        crop: {
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 48.79,
+        },
+    },
+    heroInfoSettings: {
+        offsetX: 44,
+        offsetY: -1,
+    },
+    attacks: [
+        {
+            id: generateId(),
+            name: 'KINETIC CARDS',
+            description: 'Launch three kinetic-charged cards in an arc ahead. Each card detonates on impact, creating a single-target explosion that damages enemies and heals allies.',
+            hotkey: 'LMB',
+            hotkeyConsole: 'R2',
+            icon: '/icons/gambit/kinetic-cards.png',
+            iconScale: 0.9,
+        },
+    ],
+    teamUpAbilities: [
+        {
+            id: generateId(),
+            name: 'ACE OF ACES',
+            description: 'Gambit shares kinetic energy with Magneto and Rogue. When Magneto activates this ability, [green]Iron Volley[/green] is replaced with [green]Ace Greatsword[/green], which detonates upon striking enemies. The explosion leaves residual kinetic energy within the target, inflicting secondary damage after a brief delay. When Rogue activates the ability, each of her attacks causes a kinetic explosion that damages nearby enemies and heals nearby allies.',
+            hotkey: 'PASSIVE',
+            hotkeyConsole: 'D-Pad',
+            isPassive: true,
+            isAnchor: true,
+            icon: '/icons/gambit/ace-of-aces.png',
+            characterImageCrop: { top: 4, left: 41, right: 41, bottom: 80 },
+            partnerIcons: ['/hero-icons/magneto_avatar.png', '/hero-icons/rogue_avatar.png'],
+        },
+    ],
+    abilities: [
+        {
+            id: generateId(),
+            name: 'CAJUN CHARGE',
+            description: 'Side-step forward with bo staff in hand, dashing a short distance.',
+            hotkey: 'LSHIFT',
+            hotkeyConsole: 'L1',
+            icon: '/icons/gambit/cajun-charge.png',
+            iconScale: 0.8,
+        },
+        {
+            id: generateId(),
+            name: 'HEALING HEARTS',
+            description: 'Conjure a Heart card by consuming one stack of [green]Sleight of Hand[/green] to Heal and switch to the [green]Healing Hearts[/green] deck.',
+            hotkey: 'E',
+            hotkeyConsole: 'R1',
+            icon: '/icons/gambit/healing-hearts.png',
+            iconScale: 0.8,
+        },
+        {
+            id: generateId(),
+            name: 'BREAKING SPADES',
+            description: 'Conjure a Spade card by consuming one stack of [green]Sleight of Hand[/green] to gain a [orange]Damage Boost[/orange] and switch to the [orange]Breaking Spades[/orange] deck.',
+            hotkey: 'F',
+            hotkeyConsole: 'Triangle',
+            icon: '/icons/gambit/breaking-spades.png',
+            iconScale: 0.8,
+        },
+        {
+            id: generateId(),
+            name: 'BAYOU BASH',
+            description: 'Channel kinetic energy into the bo staff, then slam it into the ground after a sweeping strike, creating a shockwave that damages nearby enemies and heals allies. Follow up [green]Cajun Charge[/green] with [orange]Big Easy Impact[/orange] to sprint forward while striking with the bo staff, triggering three kinetic explosions along the path.',
+            hotkey: 'RMB',
+            hotkeyConsole: 'L2',
+            icon: '/icons/gambit/bayou-bash.png',
+            iconScale: 0.8,
+        },
+    ],
+    passives: [], // Gambit has no passives displayed on main page
+    ultimate: {
+        id: generateId(),
+        name: 'RAGIN\' ROYAL FLUSH',
+        description: 'Lock onto an ally within sight and unleash multiple Aces that heal and [blue]Purify[/blue]. Both enter the [green]Kinetic Transfer[/green] state, granting increased [green]Movement Speed[/green] and [green]Jump Boost[/green], while enhancing attacks with additional single-target explosive damage and providing the ally with Ultimate Ability Charge Acceleration.',
+        hotkey: 'Q',
+        hotkeyConsole: 'L3+R3',
+        icon: '/icons/gambit/ragin-royal-flush.png',
+    },
+    additionalPages: [
+        {
+            id: generateId(),
+            title: 'DECK ABILITIES',
+            icon: '/heroes/gambit-logo.png', // Hero logo for page 2
+            abilities: [], // Empty for legacy compat
+            contentOffsetY: -85,
+            blocks: [
+                {
+                    id: generateId(),
+                    type: 'columns',
+                    columns: [
+                        {
+                            id: generateId(),
+                            title: 'HEALING HEARTS',
+                            icon: '/icons/gambit/healing-hearts.png',
+                            iconScale: 0.8,
+                            blocks: [
+                                {
+                                    id: generateId(),
+                                    type: 'ability',
+                                    ability: {
+                                        id: generateId(),
+                                        name: 'BRIDGE BOOST',
+                                        description: 'While [green]Healing Hearts[/green] deck is active, trigger [green]Flush Empowerment[/green] to card spring and fire a full deck forward. Cards bounce between allies on impact, granting Health and a [green]Healing Boost[/green].',
+                                        hotkey: 'E',
+                                        hotkeyConsole: 'R1',
+                                        icon: '/icons/gambit/bridge-boost.png',
+                                        iconScale: 0.8,
+                                    },
+                                },
+                                {
+                                    id: generateId(),
+                                    type: 'ability',
+                                    ability: {
+                                        id: generateId(),
+                                        name: 'PURIFYING PICK-UP',
+                                        description: 'While [green]Healing Hearts[/green] deck is active, trigger [green]Raise Empowerment[/green] to launch a cluster of cards in an arc ahead. Explosions heal nearby allies and [blue]Purify[/blue] them.',
+                                        hotkey: 'F',
+                                        hotkeyConsole: 'Triangle',
+                                        icon: '/icons/gambit/purifying-pickup.png',
+                                        iconScale: 0.8,
+                                    },
+                                },
+                            ],
+                        },
+                        {
+                            id: generateId(),
+                            title: 'BREAKING SPADES',
+                            icon: '/icons/gambit/breaking-spades.png',
+                            iconScale: 0.8,
+                            blocks: [
+                                {
+                                    id: generateId(),
+                                    type: 'ability',
+                                    ability: {
+                                        id: generateId(),
+                                        name: 'EXPLOSIVE TRICK',
+                                        description: 'While [orange]Breaking Spades[/orange] deck is active, trigger [orange]Flush Empowerment[/orange] to fire a full set of cards forward. Cards explode on impact, dealing damage while inflicting [blue]Reduced Healing[/blue].',
+                                        hotkey: 'E',
+                                        hotkeyConsole: 'R1',
+                                        icon: '/icons/gambit/explosive-trick.png',
+                                        iconScale: 0.8,
+                                    },
+                                },
+                                {
+                                    id: generateId(),
+                                    type: 'ability',
+                                    ability: {
+                                        id: generateId(),
+                                        name: 'BIDDING BARRAGE',
+                                        description: 'While [orange]Breaking Spades[/orange] deck is active, trigger [orange]Raise Empowerment[/orange] to scatter cards in an arc in all directions. Explosions damage enemies and [orange]Launch[/orange] them up.',
+                                        hotkey: 'F',
+                                        hotkeyConsole: 'Triangle',
+                                        icon: '/icons/gambit/bidding-barrage.png',
+                                        iconScale: 0.8,
+                                    },
+                                },
+                            ],
+                        },
+                    ],
+                } as ColumnsBlock,
+            ],
+        },
+    ],
 });
 
 // All available presets
@@ -649,6 +953,16 @@ export const HERO_PRESETS: HeroPresetConfig[] = [
             showBackground: true,
             contentOffsetY: 78,
             abilitySpacing: 0,
+        }),
+    },
+    { 
+        name: 'Gambit', 
+        getData: getGambitPreset,
+        getDisplaySettings: () => ({
+            customBackground: '/backgrounds/img_gallery_card_horizontal_01.png',
+            showBackground: true,
+            contentOffsetY: 46,
+            abilitySpacing: 8,
         }),
     },
 ];

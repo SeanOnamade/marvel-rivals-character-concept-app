@@ -57,6 +57,7 @@ function App() {
     const [isOpeningTab, setIsOpeningTab] = useState(false);
     const [mobileTab, setMobileTab] = useState<'preview' | 'editor' | 'both'>('both');
     const [previewScale, setPreviewScale] = useState(75); // Default 75%
+    const [isMobileView, setIsMobileView] = useState(false); // Track if we're on mobile
     const rendererRef = useRef<HTMLDivElement>(null);
     
     // "Both" mode pinned preview - pinch/zoom/pan state
@@ -76,6 +77,16 @@ function App() {
     // Preload preset images on app mount
     useEffect(() => {
         preloadPresetImages();
+    }, []);
+
+    // Track mobile view state to avoid duplicate renderer refs
+    useEffect(() => {
+        const checkMobile = () => {
+            setIsMobileView(window.innerWidth < 768); // md breakpoint
+        };
+        checkMobile();
+        window.addEventListener('resize', checkMobile);
+        return () => window.removeEventListener('resize', checkMobile);
     }, []);
 
     // Keyboard shortcuts for undo/redo (unified - always use app undo)
@@ -393,7 +404,7 @@ function App() {
                                 }}
                             >
                                 <AbilityPageRenderer
-                                    ref={rendererRef}
+                                    ref={(!isMobileView || mobileTab !== 'both') ? rendererRef : undefined}
                                     heroData={heroData}
                                     displaySettings={displaySettings}
                                     onImageUpload={handleImageUpload}
@@ -439,7 +450,7 @@ function App() {
                                 }}
                             >
                                 <AbilityPageRenderer
-                                    ref={rendererRef}
+                                    ref={(isMobileView && mobileTab === 'both') ? rendererRef : undefined}
                                     heroData={heroData}
                                     displaySettings={displaySettings}
                                     onImageUpload={handleImageUpload}
