@@ -1122,12 +1122,13 @@ const FormEditor: React.FC<FormEditorProps> = ({ heroData, onChange, displaySett
                             </div>
                         )}
                         <div className="flex flex-col gap-2">
-                            <label className="flex items-center gap-2 px-3 py-1.5 bg-marvel-metal border border-marvel-border rounded text-sm hover:border-marvel-yellow transition-colors cursor-pointer">
+                            <label className="flex items-center gap-2 px-3 py-1.5 bg-marvel-metal border border-marvel-border rounded text-sm hover:border-marvel-yellow transition-colors cursor-pointer min-h-[44px]">
                                 <Upload className="w-4 h-4" />
                                 <span>Upload Logo</span>
                                 <input
                                     type="file"
-                                    accept="image/*"
+                                    accept="image/png,image/jpeg,image/jpg,image/gif,image/webp,image/*"
+                                    multiple={false}
                                     className="hidden"
                                     onChange={(e) => {
                                         const file = e.target.files?.[0];
