@@ -420,9 +420,56 @@ const HeaderBlockRenderer: React.FC<{ block: HeaderBlock }> = ({ block }) => {
     );
 };
 
-// Ability block renderer - renders a single ability with diamond icon
+// Ability block renderer - renders a single ability with diamond icon (supports ultimate styling)
 const AbilityBlockRenderer: React.FC<{ block: AbilityBlock; getHotkey: (pc: string, console?: string) => string }> = ({ block, getHotkey }) => {
     const { ability } = block;
+    
+    // Ultimate abilities get special glow styling
+    if (ability.isUltimate) {
+        return (
+            <div className="flex gap-4 items-start">
+                <div className="flex flex-col items-center w-14 flex-shrink-0 overflow-visible">
+                    <div className="relative flex items-center justify-center overflow-visible">
+                        <div className="absolute inset-0 bg-yellow-500/30 blur-lg rounded-full transform scale-150" />
+                        {/* Diamond shape with glow */}
+                        <div 
+                            className={`w-10 h-10 bg-[#1a1a1a] border border-yellow-500/60 flex-shrink-0 ${ability.iconBreakout ? '' : 'overflow-hidden'} rotate-45 flex items-center justify-center`}
+                            style={{ 
+                                boxShadow: '0 0 20px rgba(255,200,0,0.6), inset 0 0 15px rgba(255,200,0,0.4)',
+                                ...(ability.iconBreakout ? { zIndex: 10, overflow: 'visible' } : {})
+                            }}
+                        >
+                            {ability.icon && (
+                                <div className={`-rotate-45 flex items-center justify-center w-full h-full ${ability.iconBreakout ? 'overflow-visible' : ''}`}>
+                                    <img 
+                                        src={ability.icon}
+                                        alt="" 
+                                        className="object-contain"
+                                        style={{ 
+                                            filter: 'brightness(0) invert(1) drop-shadow(0 0 2px rgba(255,200,0,0.6))',
+                                            width: `${(ability.iconScale || 1) * 140}%`,
+                                            height: `${(ability.iconScale || 1) * 140}%`
+                                        }}
+                                    />
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                    <HotkeyLabel hotkey={getHotkey(ability.hotkey, ability.hotkeyConsole)} glow />
+                </div>
+                <div className="flex-1 min-w-0 pt-1">
+                    <h4 className="text-lg font-bold uppercase tracking-wide text-yellow-400 mb-1">
+                        {ability.name}
+                    </h4>
+                    <p className="text-sm text-gray-300 leading-relaxed">
+                        <ColoredText text={ability.description} />
+                    </p>
+                </div>
+            </div>
+        );
+    }
+    
+    // Regular ability rendering
     return (
         <div className="flex gap-4 items-start">
             <div className="flex flex-col items-center w-14 flex-shrink-0" style={ability.iconBreakout ? { overflow: 'visible' } : undefined}>
@@ -467,7 +514,12 @@ const AttackBlockRenderer: React.FC<{ block: AttackBlock; getHotkey: (pc: string
 };
 
 // Team-up block renderer - renders a single team-up ability
-const TeamUpBlockRenderer: React.FC<{ block: TeamUpBlock; getHotkey: (pc: string, console?: string) => string }> = ({ block, getHotkey }) => {
+const TeamUpBlockRenderer: React.FC<{ 
+    block: TeamUpBlock; 
+    getHotkey: (pc: string, console?: string) => string;
+    heroPortraitImage?: string;
+    heroPortraitCrop?: CropBounds;
+}> = ({ block, getHotkey, heroPortraitImage, heroPortraitCrop }) => {
     const { teamUp } = block;
     return (
         <div className="flex gap-4 items-start">
@@ -486,14 +538,58 @@ const TeamUpBlockRenderer: React.FC<{ block: TeamUpBlock; getHotkey: (pc: string
                 <p className="text-sm text-gray-300 leading-relaxed">
                     <ColoredText text={teamUp.description} />
                 </p>
-                {/* Partner icons */}
-                {teamUp.partnerIcons && teamUp.partnerIcons.length > 0 && (
-                    <div className="flex gap-1 mt-2">
-                        {teamUp.partnerIcons.map((icon, idx) => (
-                            <PartnerIcon key={idx} icon={icon} />
-                        ))}
-                    </div>
-                )}
+                {/* Team-up hero icons with divider */}
+                <div className="flex gap-1 mt-2 items-center">
+                    {/* Hero image (anchor position or secondary) */}
+                    {teamUp.isAnchor !== false ? (
+                        <>
+                            {/* Hero is anchor - show first */}
+                            <PartnerIcon 
+                                icon={teamUp.characterImageUseCustom && teamUp.characterImage 
+                                    ? teamUp.characterImage 
+                                    : heroPortraitImage
+                                } 
+                                crop={teamUp.characterImageUseCustom && teamUp.characterImage
+                                    ? teamUp.characterImageCrop
+                                    : (teamUp.characterImageCrop || heroPortraitCrop)
+                                }
+                            />
+                            {/* Divider */}
+                            {teamUp.partnerIcons && teamUp.partnerIcons.length > 0 && (
+                                <div className="w-px h-6 bg-gray-500 mx-1"></div>
+                            )}
+                            {/* Partner icons */}
+                            {teamUp.partnerIcons?.map((icon, idx) => (
+                                <PartnerIcon key={idx} icon={icon} />
+                            ))}
+                        </>
+                    ) : (
+                        <>
+                            {/* Hero is secondary - show anchor icon first, then divider, then hero (cropped), then partners */}
+                            {teamUp.anchorIcon && (
+                                <>
+                                    <PartnerIcon icon={teamUp.anchorIcon} />
+                                    <div className="w-px h-6 bg-gray-500 mx-1"></div>
+                                </>
+                            )}
+                            {/* Hero's character image (cropped or custom) */}
+                            <PartnerIcon 
+                                icon={teamUp.characterImageUseCustom && teamUp.characterImage 
+                                    ? teamUp.characterImage 
+                                    : heroPortraitImage
+                                } 
+                                crop={teamUp.characterImageUseCustom && teamUp.characterImage
+                                    ? teamUp.characterImageCrop
+                                    : (teamUp.characterImageCrop || heroPortraitCrop)
+                                }
+                            />
+                            {/* Other partner icons */}
+                            {teamUp.partnerIcons?.map((icon, idx) => (
+                                <PartnerIcon key={idx} icon={icon} />
+                            ))}
+                        </>
+                    )}
+                </div>
             </div>
         </div>
     );
@@ -531,8 +627,10 @@ const ColumnsBlockRenderer: React.FC<ColumnsBlockRendererProps> = ({ block, rend
                 <div key={column.id} className="space-y-4">
                     {column.title && (
                         <div className="flex items-center gap-3 mb-5" style={column.iconBreakout ? { overflow: 'visible' } : undefined}>
-                            {/* Use AbilityIcon for diamond shape with background */}
-                            <AbilityIcon icon={column.icon} iconScale={column.iconScale} size="md" breakout={column.iconBreakout} />
+                            {/* Use AbilityIcon for diamond shape with background - only if icon is provided */}
+                            {column.icon && (
+                                <AbilityIcon icon={column.icon} iconScale={column.iconScale} size="md" breakout={column.iconBreakout} />
+                            )}
                             <h3 className="text-xl font-bold uppercase tracking-wider text-white">
                                 {column.title}
                             </h3>
@@ -553,15 +651,29 @@ const AbilityPageRenderer = React.forwardRef<HTMLDivElement, AbilityPageRenderer
     ({ heroData, displaySettings, onImageUpload, onPageChange }, ref) => {
         const isPC = displaySettings.controlScheme === 'PC';
         const currentPage = displaySettings.currentPage || 0;
+        
+        // Get current additional page if viewing one (for form-switching heroes like Cloak & Dagger)
+        const currentAdditionalPage = currentPage > 0 && heroData.additionalPages 
+            ? heroData.additionalPages[currentPage - 1] 
+            : null;
+        
+        // Hero name can be overridden by additional page (for form-switching heroes)
+        const displayHeroName = currentAdditionalPage?.heroName || heroData.name;
+        
+        // Portrait image can be overridden by additional page (for form-switching heroes)
+        const displayPortraitImage = currentAdditionalPage?.portraitImage || heroData.portraitImage;
+        
+        // Portrait settings can be overridden by additional page (for form-switching heroes)
+        const displayPortraitSettings = currentAdditionalPage?.portraitSettings || heroData.portraitSettings;
 
         // Track image loading state
         const [isImageLoading, setIsImageLoading] = useState(false);
-        const previousImageRef = useRef<string | undefined>(heroData.portraitImage);
+        const previousImageRef = useRef<string | undefined>(displayPortraitImage);
         const loadingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
         // Detect when portrait image changes and show loading overlay
         useEffect(() => {
-            const currentImage = heroData.portraitImage;
+            const currentImage = displayPortraitImage;
             const previousImage = previousImageRef.current;
 
             // Only show loading if switching between different images (not initial load or clearing)
@@ -589,7 +701,7 @@ const AbilityPageRenderer = React.forwardRef<HTMLDivElement, AbilityPageRenderer
                     clearTimeout(loadingTimeoutRef.current);
                 }
             };
-        }, [heroData.portraitImage]);
+        }, [displayPortraitImage]);
 
         const getHotkey = (pcKey: string, consoleKey?: string) => {
             return isPC ? pcKey : (consoleKey || pcKey);
@@ -838,7 +950,12 @@ const AbilityPageRenderer = React.forwardRef<HTMLDivElement, AbilityPageRenderer
                 case 'attack':
                     return <AttackBlockRenderer block={block as AttackBlock} getHotkey={getHotkey} />;
                 case 'teamup':
-                    return <TeamUpBlockRenderer block={block as TeamUpBlock} getHotkey={getHotkey} />;
+                    return <TeamUpBlockRenderer 
+                        block={block as TeamUpBlock} 
+                        getHotkey={getHotkey} 
+                        heroPortraitImage={displayPortraitImage}
+                        heroPortraitCrop={displayPortraitSettings?.crop}
+                    />;
                 case 'text':
                     return <TextBlockRenderer block={block as TextBlock} />;
                 case 'divider':
@@ -850,11 +967,71 @@ const AbilityPageRenderer = React.forwardRef<HTMLDivElement, AbilityPageRenderer
             }
         };
 
+        // Helper to render an ultimate ability (reusable for main page and additional pages)
+        const renderUltimate = (ultimate: typeof heroData.ultimate) => (
+            <div className="flex gap-4 items-start">
+                <div className="flex flex-col items-center w-14 flex-shrink-0 overflow-visible">
+                    <div className="relative flex items-center justify-center overflow-visible">
+                        <div className="absolute inset-0 bg-yellow-500/30 blur-lg rounded-full transform scale-150" />
+                        {/* Diamond shape with glow */}
+                        <div 
+                            className={`w-10 h-10 bg-[#1a1a1a] border border-yellow-500/60 flex-shrink-0 ${ultimate.iconBreakout ? '' : 'overflow-hidden'} rotate-45 flex items-center justify-center`}
+                            style={{ 
+                                boxShadow: '0 0 20px rgba(255,200,0,0.6), inset 0 0 15px rgba(255,200,0,0.4)',
+                                ...(ultimate.iconBreakout ? { zIndex: 10, overflow: 'visible' } : {})
+                            }}
+                        >
+                            {/* Custom icon if provided (made white) */}
+                            {ultimate.icon && (
+                                <div className={`-rotate-45 flex items-center justify-center w-full h-full ${ultimate.iconBreakout ? 'overflow-visible' : ''}`}>
+                                    <img 
+                                        src={ultimate.icon}
+                                        alt="" 
+                                        className="object-contain"
+                                        style={{ 
+                                            filter: 'brightness(0) invert(1) drop-shadow(0 0 2px rgba(255,200,0,0.6))',
+                                            width: `${(ultimate.iconScale || 1) * 140}%`,
+                                            height: `${(ultimate.iconScale || 1) * 140}%`
+                                        }}
+                                    />
+                                </div>
+                            )}
+                        </div>
+                        {/* Lightning icon - overlapping the diamond */}
+                        {displaySettings.showUltimateLightning === true && (
+                            <img 
+                                src="/ui/ultimate-icon.png"
+                                alt="" 
+                                className="absolute w-14 h-14 object-contain pointer-events-none"
+                                style={{ 
+                                    transform: 'scale(2) translateX(-2px) translateY(-2px)',
+                                    opacity: 0.7,
+                                    filter: 'hue-rotate(-10deg) saturate(1.2) drop-shadow(0 0 4px rgba(255,200,0,0.6))' 
+                                }}
+                            />
+                        )}
+                    </div>
+                    <HotkeyLabel hotkey={getHotkey(ultimate.hotkey, ultimate.hotkeyConsole)} glow />
+                </div>
+                <div className="flex-1 min-w-0 pt-1">
+                    <h4 className="text-lg font-bold uppercase tracking-wide text-yellow-400 mb-1">
+                        {ultimate.name}
+                    </h4>
+                    <p className="text-sm text-gray-300 leading-relaxed">
+                        <ColoredText text={ultimate.description} />
+                    </p>
+                </div>
+            </div>
+        );
+
         // Render block-based page content
         const renderBlocksPage = (page: ContentPage) => {
             const layoutClass = page.layout === 'two-column' 
                 ? 'grid grid-cols-2 gap-6' 
                 : 'flex flex-col gap-4';
+            
+            // Use page-specific ability spacing if set, otherwise fall back to global
+            const pageAbilitySpacing = page.abilitySpacing ?? displaySettings.abilitySpacing ?? 16;
             
             return (
                 <div className="flex-1 pt-2">
@@ -864,8 +1041,15 @@ const AbilityPageRenderer = React.forwardRef<HTMLDivElement, AbilityPageRenderer
                         <div className="flex-1 h-px bg-gray-600"></div>
                     </div>
                     
+                    {/* Ultimate ability for this page (if provided) */}
+                    {page.ultimate && (
+                        <div className="mb-4" style={{ marginBottom: `${pageAbilitySpacing}px` }}>
+                            {renderUltimate(page.ultimate)}
+                        </div>
+                    )}
+                    
                     {/* Block content */}
-                    <div className={layoutClass}>
+                    <div className={layoutClass} style={{ gap: `${pageAbilitySpacing}px` }}>
                         {page.blocks!.map((block) => (
                             <div key={block.id}>
                                 {renderBlock(block)}
@@ -1174,14 +1358,14 @@ const AbilityPageRenderer = React.forwardRef<HTMLDivElement, AbilityPageRenderer
                             <div 
                                 className="w-full h-full"
                                 style={{
-                                    transform: `scale(${heroData.portraitSettings?.scale || 1}) translate(${heroData.portraitSettings?.offsetX || 0}%, ${-(heroData.portraitSettings?.offsetY || 0)}%)`,
+                                    transform: `scale(${displayPortraitSettings?.scale || 1}) translate(${displayPortraitSettings?.offsetX || 0}%, ${-(displayPortraitSettings?.offsetY || 0)}%)`,
                                 }}
                             >
                                 <HeroPortrait
-                                    imageUrl={heroData.portraitImage}
+                                    imageUrl={displayPortraitImage}
                                     onImageUpload={onImageUpload}
-                                    crop={heroData.portraitSettings?.crop}
-                                    edgeFade={heroData.portraitSettings?.fadeAmount ?? 50}
+                                    crop={displayPortraitSettings?.crop}
+                                    edgeFade={displayPortraitSettings?.fadeAmount ?? 50}
                                 />
                             </div>
                         </div>
@@ -1213,7 +1397,7 @@ const AbilityPageRenderer = React.forwardRef<HTMLDivElement, AbilityPageRenderer
                             
                             {/* Hero Name */}
                             <h1 className="text-5xl font-bold uppercase tracking-wider text-white drop-shadow-lg leading-tight">
-                                {heroData.name}
+                                {displayHeroName}
                             </h1>
 
                             {/* Difficulty */}
@@ -1239,9 +1423,6 @@ const AbilityPageRenderer = React.forwardRef<HTMLDivElement, AbilityPageRenderer
                     {/* RIGHT CONTENT AREA - Attacks & Abilities (70% width) - centered vertically */}
                     {(() => {
                         // Determine content offset: use page-specific offset if on additional page, else global
-                        const currentAdditionalPage = currentPage > 0 && heroData.additionalPages 
-                            ? heroData.additionalPages[currentPage - 1] 
-                            : null;
                         const contentOffset = currentAdditionalPage?.contentOffsetY !== undefined 
                             ? currentAdditionalPage.contentOffsetY 
                             : (displaySettings.contentOffsetY || 0);

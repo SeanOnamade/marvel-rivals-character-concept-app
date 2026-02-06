@@ -22,6 +22,7 @@ export interface Ability {
     iconScale?: number; // Icon scale (0.5 to 2, default 1)
     iconBreakout?: boolean; // If true, icon breaks out of container (higher z-index, no clipping)
     isPassive?: boolean; // Passives appear at bottom of abilities column
+    isUltimate?: boolean; // Style as ultimate ability (yellow glow) within blocks
 }
 
 export interface Attack {
@@ -60,10 +61,15 @@ export interface ContentPage {
     id: string;
     title: string;
     icon?: string;
+    heroName?: string; // Override hero name for this page (for form-switching heroes like Cloak & Dagger)
+    portraitImage?: string; // Override portrait image for this page (for form-switching heroes)
+    portraitSettings?: HeroImageSettings; // Override portrait settings for this page
     abilities: Ability[];  // KEEP for backward compatibility
     blocks?: PageBlock[];  // NEW: Optional block-based content
     layout?: 'single' | 'two-column'; // NEW: Page layout option
     contentOffsetY?: number; // Per-page vertical offset (-100 to 100, default 0)
+    abilitySpacing?: number; // Per-page ability spacing (0-24, uses global if not set)
+    ultimate?: Ability; // Optional ultimate ability for this page
 }
 
 // ============================================
@@ -749,6 +755,227 @@ export const getSpotPreset = (): HeroData => ({
     additionalPages: [],
 });
 
+export const getCloakAndDaggerPreset = (): HeroData => ({
+    name: 'DAGGER',
+    role: 'Strategist',
+    difficulty: 3,
+    bannerColor: '#4d5993', // Blue theme from template
+    portraitImage: '/downloads/cnd/Marvel-Rivals-Dagger-abilitiies--removebg-preview.png',
+    heroLogo: '/logos/cloak-and-dagger.png',
+    heroLogoSettings: {
+        offsetX: -60,
+        offsetY: 54,
+        scale: 1.3,
+    },
+    mainPageIcon: '/hero-icons/cloak-and-dagger_avatar.png', // Page 1 icon
+    portraitSettings: {
+        scale: 0.9,
+        offsetX: 0,
+        offsetY: 12,
+        fadeAmount: 12,
+        crop: {
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+        },
+    },
+    heroInfoSettings: {
+        offsetX: 75,
+        offsetY: 21,
+    },
+    attacks: [
+        {
+            id: generateId(),
+            name: 'LIGHTFORCE DAGGER',
+            description: 'Unleash a bouncing [orange]Lightforce Dagger[/orange] to damage enemies and heal nearby allies.',
+            hotkey: 'LMB',
+            hotkeyConsole: 'R2',
+            icon: '/downloads/cnd/latest (4).png',
+            iconScale: 0.8,
+        },
+    ],
+    teamUpAbilities: [
+        {
+            id: generateId(),
+            name: 'FROM SHADOW TO LIGHT',
+            description: 'Cloak & Dagger share light and dark energy with [orange]Hawkeye[/orange] and [blue]Psylocke[/blue]. When Hawkeye uses [orange]Crescent Slash[/orange], he also releases a blade wave that heals and [green]boosts healing[/green] for teammates, while inflicting damage and [orange]Vulnerability[/orange] on enemies. Psylocke can launch a Light Boomerang Dart that heals allies, harms enemies, and provides her with temporary healing upon return. She can also unleash a ring of Dark Darts that slow enemies while she briefly enters a [blue]Phased[/blue] state.',
+            hotkey: 'PASSIVE',
+            hotkeyConsole: 'D-Pad',
+            isPassive: true,
+            isAnchor: true,
+            icon: '/downloads/cnd/fromstol.png',
+            iconScale: 0.8,
+            partnerIcons: ['/hero-icons/hawkeye_avatar.png', '/hero-icons/psylocke_avatar.png'],
+        },
+    ],
+    abilities: [
+        {
+            id: generateId(),
+            name: 'SHADOW\'S EMBRACE',
+            description: 'Switch to Cloak.',
+            hotkey: 'LSHIFT',
+            hotkeyConsole: 'L1',
+            icon: '/downloads/cnd/fromstol.png',
+            iconScale: 0.8,
+        },
+        {
+            id: generateId(),
+            name: 'VEIL OF LIGHTFORCE',
+            description: 'Deploy a Veil of Lightforce to heal allies upon touch and grant them a [green]Healing Boost[/green].',
+            hotkey: 'E',
+            hotkeyConsole: 'R1',
+            icon: '/downloads/cnd/64 (8).png',
+            iconScale: 0.8,
+        },
+        {
+            id: generateId(),
+            name: 'DAGGER STORM',
+            description: 'Launch a volley of daggers, creating a [green]Healing-Over-Time[/green] field in the impact area.',
+            hotkey: 'RMB',
+            hotkeyConsole: 'L2',
+            icon: '/downloads/cnd/64 (6).png',
+            iconScale: 0.8,
+        },
+    ],
+    passives: [],
+    ultimate: {
+        id: generateId(),
+        name: 'ETERNAL BOND',
+        description: 'Perform three rapid dashes, healing allies and damaging enemies along the path.',
+        hotkey: 'Q',
+        hotkeyConsole: 'L3+R3',
+        icon: '/downloads/cnd/64 (5).png',
+        iconScale: 0.8,
+    },
+    additionalPages: [
+        {
+            id: generateId(),
+            title: 'CLOAK',
+            heroName: 'CLOAK', // Override hero name for this page
+            portraitImage: '/downloads/cnd/content-removebg-preview.png',
+            portraitSettings: {
+                scale: 0.9,
+                offsetX: 0,
+                offsetY: 8,
+                fadeAmount: 12,
+                crop: { top: 0, left: 0, right: 0, bottom: 0 },
+            },
+            icon: '/logos/cloak-and-dagger.png',
+            abilities: [], // Empty for legacy compat
+            contentOffsetY: -25,
+            blocks: [
+                {
+                    id: generateId(),
+                    type: 'columns',
+                    columns: [
+                        {
+                            id: generateId(),
+                            title: 'ATTACKS',
+                            blocks: [
+                                {
+                                    id: generateId(),
+                                    type: 'attack',
+                                    attack: {
+                                        id: generateId(),
+                                        name: 'DARKFORCE CLOAK',
+                                        description: 'Inflict continuous damage to an enemy.',
+                                        hotkey: 'LMB',
+                                        hotkeyConsole: 'R2',
+                                        icon: '/downloads/cnd/darkforce.png',
+                                        iconScale: 0.8,
+                                    },
+                                } as AttackBlock,
+                                {
+                                    id: generateId(),
+                                    type: 'header',
+                                    text: 'TEAM-UP ABILITIES',
+                                    variant: 'teamup',
+                                } as HeaderBlock,
+                                {
+                                    id: generateId(),
+                                    type: 'teamup',
+                                    teamUp: {
+                                        id: generateId(),
+                                        name: 'FROM SHADOW TO LIGHT',
+                                        description: 'Cloak & Dagger share light and dark energy with [orange]Hawkeye[/orange] and [blue]Psylocke[/blue]. When Hawkeye uses [orange]Crescent Slash[/orange], he also releases a blade wave that heals and [green]boosts healing[/green] for teammates, while inflicting damage and [orange]Vulnerability[/orange] on enemies. Psylocke can launch a Light Boomerang Dart that heals allies, harms enemies, and provides her with temporary healing upon return. She can also unleash a ring of Dark Darts that slow enemies while she briefly enters a [blue]Phased[/blue] state.',
+                                        hotkey: 'PASSIVE',
+                                        hotkeyConsole: 'D-Pad',
+                                        isPassive: true,
+                                        isAnchor: true,
+                                        icon: '/downloads/cnd/fromstol.png',
+                                        iconScale: 0.8,
+                                        partnerIcons: ['/hero-icons/hawkeye_avatar.png', '/hero-icons/psylocke_avatar.png'],
+                                    },
+                                } as TeamUpBlock,
+                            ],
+                        },
+                        {
+                            id: generateId(),
+                            title: 'ABILITIES',
+                            blocks: [
+                                {
+                                    id: generateId(),
+                                    type: 'ability',
+                                    ability: {
+                                        id: generateId(),
+                                        name: 'ETERNAL BOND',
+                                        description: 'Perform three rapid dashes, healing allies and damaging enemies along the path.',
+                                        hotkey: 'Q',
+                                        hotkeyConsole: 'L3+R3',
+                                        isUltimate: true, // Styled as ultimate within the abilities column
+                                        icon: '/downloads/cnd/64 (5).png',
+                                        iconScale: 0.8,
+                                    },
+                                } as AbilityBlock,
+                                {
+                                    id: generateId(),
+                                    type: 'ability',
+                                    ability: {
+                                        id: generateId(),
+                                        name: 'LIGHT\'S EMBRACE',
+                                        description: 'Switch to Dagger.',
+                                        hotkey: 'LSHIFT',
+                                        hotkeyConsole: 'L1',
+                                        icon: '/downloads/cnd/lightemb.png',
+                                        iconScale: 0.8,
+                                    },
+                                } as AbilityBlock,
+                                {
+                                    id: generateId(),
+                                    type: 'ability',
+                                    ability: {
+                                        id: generateId(),
+                                        name: 'TERROR CAPE',
+                                        description: 'Deploy a Veil of Darkforce to damage enemies upon touch, applying [blue]Blind[/blue] to narrow their sight and [orange]Vulnerability[/orange] to amplify damage received.',
+                                        hotkey: 'E',
+                                        hotkeyConsole: 'R1',
+                                        icon: '/downloads/cnd/64 (10).png',
+                                        iconScale: 0.8,
+                                    },
+                                } as AbilityBlock,
+                                {
+                                    id: generateId(),
+                                    type: 'ability',
+                                    ability: {
+                                        id: generateId(),
+                                        name: 'DARK TELEPORTATION',
+                                        description: 'Enshroud nearby allies in the Darkforce Dimension and grant them [green]Phased[/green], making them untargetable and invisible to enemies and granting them a [green]Movement Boost[/green].',
+                                        hotkey: 'RMB',
+                                        hotkeyConsole: 'L2',
+                                        icon: '/downloads/cnd/darktele.png',
+                                        iconScale: 0.8,
+                                    },
+                                } as AbilityBlock,
+                            ],
+                        },
+                    ],
+                } as ColumnsBlock,
+            ],
+        },
+    ],
+});
+
 export const getGambitPreset = (): HeroData => ({
     name: 'GAMBIT',
     role: 'Strategist',
@@ -967,6 +1194,16 @@ export const HERO_PRESETS: HeroPresetConfig[] = [
             showBackground: true,
             contentOffsetY: 46,
             abilitySpacing: 8,
+        }),
+    },
+    { 
+        name: 'Cloak & Dagger', 
+        getData: getCloakAndDaggerPreset,
+        getDisplaySettings: () => ({
+            customBackground: '/backgrounds/img_gallerys1_card_horizontal_04.png',
+            showBackground: true,
+            contentOffsetY: -61,
+            abilitySpacing: 24,
         }),
     },
 ];

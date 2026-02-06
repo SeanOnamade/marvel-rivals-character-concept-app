@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { HeroData, Role, Attack, Ability, TeamUpAbility, DisplaySettings, ContentPage, CropBounds, createDefaultAttack, createDefaultAbility, createDefaultTeamUp, createDefaultPassive, createDefaultContentPage, getDefaultPortraitSettings, getDefaultHeroInfoSettings, getDefaultCropBounds, getDefaultHeroData, getDefaultFoldSettings, getDefaultDisplaySettings, HERO_PRESETS, HERO_ICONS, CONSOLE_BUTTON_OPTIONS, CONSOLE_ATTACK_OPTIONS, PageBlock, PageBlockType, HeaderBlock, AbilityBlock, AttackBlock, TeamUpBlock, TextBlock, ColumnsBlock, ColumnData, createDefaultHeaderBlock, createDefaultAbilityBlock, createDefaultAttackBlock, createDefaultTeamUpBlock, createDefaultTextBlock, createDefaultColumnsBlock, createDefaultDividerBlock } from '../types';
+import { HeroData, Role, Attack, Ability, TeamUpAbility, DisplaySettings, ContentPage, CropBounds, HeroImageSettings, createDefaultAttack, createDefaultAbility, createDefaultTeamUp, createDefaultPassive, createDefaultContentPage, getDefaultPortraitSettings, getDefaultHeroInfoSettings, getDefaultCropBounds, getDefaultHeroData, getDefaultFoldSettings, getDefaultDisplaySettings, HERO_PRESETS, HERO_ICONS, CONSOLE_BUTTON_OPTIONS, CONSOLE_ATTACK_OPTIONS, PageBlock, PageBlockType, HeaderBlock, AbilityBlock, AttackBlock, TeamUpBlock, TextBlock, ColumnsBlock, ColumnData, createDefaultHeaderBlock, createDefaultAbilityBlock, createDefaultAttackBlock, createDefaultTeamUpBlock, createDefaultTextBlock, createDefaultColumnsBlock, createDefaultDividerBlock, generateId } from '../types';
 import { downloadTemplate, loadTemplateFromFile } from '../utils';
 import { Plus, Trash2, Upload, Monitor, Gamepad2, ChevronDown, ChevronUp, ChevronRight, Move, Type, Crop, GripVertical, Download, FolderOpen, Wand2, Loader2, Palette, Swords, FileText, Image } from 'lucide-react';
 import { removeBackground } from '@imgly/background-removal';
@@ -212,6 +212,8 @@ const FormEditor: React.FC<FormEditorProps> = ({ heroData, onChange, displaySett
     const [bgRemovalError, setBgRemovalError] = useState<string | null>(null);
     const [isRemovingLogoBg, setIsRemovingLogoBg] = useState(false);
     const [logoBgRemovalError, setLogoBgRemovalError] = useState<string | null>(null);
+    const [removingPageBgId, setRemovingPageBgId] = useState<string | null>(null);
+    const [pageBgRemovalError, setPageBgRemovalError] = useState<string | null>(null);
     const [galleryOpen, setGalleryOpen] = useState(false);
     const [backgroundsToShow, setBackgroundsToShow] = useState(6);
     const [zoomInputValue, setZoomInputValue] = useState(String(previewScale));
@@ -294,6 +296,44 @@ const FormEditor: React.FC<FormEditorProps> = ({ heroData, onChange, displaySett
             console.error('Logo background removal error:', error);
             setLogoBgRemovalError('Background removal failed. Try a different image.');
             setIsRemovingLogoBg(false);
+        }
+    };
+
+    // Background removal handler for page portraits
+    const handleRemovePageBg = async (pageId: string, portraitImage: string) => {
+        if (!portraitImage) return;
+        
+        setRemovingPageBgId(pageId);
+        setPageBgRemovalError(null);
+        
+        try {
+            // Convert data URL to blob for processing
+            const response = await fetch(portraitImage);
+            const blob = await response.blob();
+            
+            // Remove background
+            const resultBlob = await removeBackground(blob, {
+                progress: (key, current, total) => {
+                    console.log(`Page portrait background removal: ${key} ${current}/${total}`);
+                }
+            });
+            
+            // Convert result back to data URL
+            const reader = new FileReader();
+            reader.onload = () => {
+                const dataUrl = reader.result as string;
+                updatePage(pageId, 'portraitImage', dataUrl);
+                setRemovingPageBgId(null);
+            };
+            reader.onerror = () => {
+                setPageBgRemovalError('Failed to process the image');
+                setRemovingPageBgId(null);
+            };
+            reader.readAsDataURL(resultBlob);
+        } catch (error) {
+            console.error('Page portrait background removal error:', error);
+            setPageBgRemovalError('Background removal failed. Try a different image.');
+            setRemovingPageBgId(null);
         }
     };
 
@@ -672,10 +712,26 @@ const FormEditor: React.FC<FormEditorProps> = ({ heroData, onChange, displaySett
         onChange({ ...heroData, additionalPages: heroData.additionalPages?.filter(p => p.id !== id) || [] });
     };
 
-    const updatePage = (id: string, field: keyof ContentPage, value: string) => {
+    const updatePage = (id: string, field: keyof ContentPage, value: string | number | HeroImageSettings | undefined) => {
         const newPages = heroData.additionalPages?.map(page =>
             page.id === id ? { ...page, [field]: value } : page
         ) || [];
+        onChange({ ...heroData, additionalPages: newPages });
+    };
+    
+    const updatePagePortraitSettings = (pageId: string, settings: Partial<HeroImageSettings>) => {
+        const newPages = heroData.additionalPages?.map(page => {
+            if (page.id === pageId) {
+                return {
+                    ...page,
+                    portraitSettings: {
+                        ...(page.portraitSettings || getDefaultPortraitSettings()),
+                        ...settings,
+                    },
+                };
+            }
+            return page;
+        }) || [];
         onChange({ ...heroData, additionalPages: newPages });
     };
 
@@ -739,6 +795,50 @@ const FormEditor: React.FC<FormEditorProps> = ({ heroData, onChange, displaySett
         const newPages = heroData.additionalPages?.map(page =>
             page.id === pageId ? { ...page, contentOffsetY: offset } : page
         ) || [];
+        onChange({ ...heroData, additionalPages: newPages });
+    };
+
+    // Update page ability spacing
+    const updatePageAbilitySpacing = (pageId: string, spacing: number) => {
+        const newPages = heroData.additionalPages?.map(page =>
+            page.id === pageId ? { ...page, abilitySpacing: spacing } : page
+        ) || [];
+        onChange({ ...heroData, additionalPages: newPages });
+    };
+
+    // Update page ultimate ability
+    const updatePageUltimate = (pageId: string, field: string, value: string | boolean | number | undefined) => {
+        const newPages = heroData.additionalPages?.map(page => {
+            if (page.id !== pageId) return page;
+            const currentUltimate = page.ultimate || {
+                id: generateId(),
+                name: 'ULTIMATE ABILITY',
+                description: 'Ultimate ability description.',
+                hotkey: 'Q',
+                hotkeyConsole: 'L3+R3',
+            };
+            return { ...page, ultimate: { ...currentUltimate, [field]: value } };
+        }) || [];
+        onChange({ ...heroData, additionalPages: newPages });
+    };
+
+    // Toggle page ultimate (add or remove)
+    const togglePageUltimate = (pageId: string, hasUltimate: boolean) => {
+        const newPages = heroData.additionalPages?.map(page => {
+            if (page.id !== pageId) return page;
+            if (hasUltimate) {
+                return { ...page, ultimate: {
+                    id: generateId(),
+                    name: 'ULTIMATE ABILITY',
+                    description: 'Ultimate ability description.',
+                    hotkey: 'Q',
+                    hotkeyConsole: 'L3+R3',
+                }};
+            } else {
+                const { ultimate, ...rest } = page;
+                return rest as typeof page;
+            }
+        }) || [];
         onChange({ ...heroData, additionalPages: newPages });
     };
 
@@ -2633,8 +2733,145 @@ const FormEditor: React.FC<FormEditorProps> = ({ heroData, onChange, displaySett
                             value={page.title}
                             onChange={(e) => updatePage(page.id, 'title', e.target.value)}
                             placeholder="Page Title (e.g., HEALING HEARTS)"
-                            className="w-full bg-marvel-metal border border-marvel-border rounded px-2 py-1 text-sm text-white mb-3"
+                            className="w-full bg-marvel-metal border border-marvel-border rounded px-2 py-1 text-sm text-white mb-2"
                         />
+                        
+                        {/* Hero Name Override (for form-switching heroes) */}
+                        <div className="mb-2">
+                            <label className="text-xs text-gray-400 block mb-1">Hero Name Override (optional)</label>
+                            <input
+                                type="text"
+                                value={page.heroName || ''}
+                                onChange={(e) => updatePage(page.id, 'heroName', e.target.value || undefined)}
+                                placeholder="Override hero name (e.g., CLOAK)"
+                                className="w-full bg-marvel-dark border border-marvel-border rounded px-2 py-1 text-xs text-white"
+                            />
+                        </div>
+                        
+                        {/* Portrait Image Override (for form-switching heroes) */}
+                        <div className="mb-3 p-2 bg-marvel-metal rounded">
+                            <div className="flex items-center justify-between mb-1">
+                                <span className="text-xs text-gray-400">Portrait Image Override</span>
+                                <div className="flex items-center gap-2">
+                                    {page.portraitImage && (
+                                        <button
+                                            onClick={() => updatePage(page.id, 'portraitImage', undefined)}
+                                            className="text-xs text-red-400 hover:text-red-300"
+                                        >
+                                            Clear
+                                        </button>
+                                    )}
+                                    <label className="cursor-pointer text-xs text-marvel-yellow hover:text-marvel-accent flex items-center gap-1">
+                                        <Upload className="w-3 h-3" />
+                                        Upload
+                                        <input
+                                            type="file"
+                                            accept="image/*"
+                                            className="hidden"
+                                            onChange={(e) => {
+                                                const file = e.target.files?.[0];
+                                                if (file) {
+                                                    const reader = new FileReader();
+                                                    reader.onload = (ev) => {
+                                                        updatePage(page.id, 'portraitImage', ev.target?.result as string);
+                                                    };
+                                                    reader.readAsDataURL(file);
+                                                }
+                                            }}
+                                        />
+                                    </label>
+                                </div>
+                            </div>
+                            {page.portraitImage && (
+                                <div className="flex items-start gap-2">
+                                    <div className="w-16 h-16 rounded border border-marvel-border overflow-hidden flex-shrink-0">
+                                        <img src={page.portraitImage} alt="Portrait" className="w-full h-full object-cover" />
+                                    </div>
+                                    <button
+                                        onClick={() => handleRemovePageBg(page.id, page.portraitImage!)}
+                                        disabled={removingPageBgId === page.id}
+                                        className="flex items-center gap-1 px-2 py-1 bg-purple-600 text-white rounded text-[10px] hover:bg-purple-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        {removingPageBgId === page.id ? (
+                                            <>
+                                                <Loader2 className="w-3 h-3 animate-spin" />
+                                                Processing...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Wand2 className="w-3 h-3" />
+                                                Remove BG
+                                            </>
+                                        )}
+                                    </button>
+                                </div>
+                            )}
+                            {pageBgRemovalError && (
+                                <p className="text-[10px] text-red-400 mt-1">{pageBgRemovalError}</p>
+                            )}
+                            <p className="text-[10px] text-gray-500 mt-1">Use a different portrait for this page (e.g., Cloak vs Dagger)</p>
+                            
+                            {/* Portrait Settings for this page */}
+                            {page.portraitImage && (
+                                <div className="space-y-2 mt-3 pt-3 border-t border-marvel-border/50">
+                                    <div>
+                                        <label className="block text-[10px] text-gray-400 mb-1">Scale: {(page.portraitSettings?.scale || 1).toFixed(1)}x</label>
+                                        <input
+                                            type="range"
+                                            min="0.5"
+                                            max="3"
+                                            step="0.1"
+                                            value={page.portraitSettings?.scale || 1}
+                                            onChange={(e) => updatePagePortraitSettings(page.id, { scale: parseFloat(e.target.value) })}
+                                            className="w-full h-1"
+                                        />
+                                    </div>
+                                    
+                                    <div>
+                                        <label className="block text-[10px] text-gray-400 mb-1">Horizontal: {page.portraitSettings?.offsetX || 0}%</label>
+                                        <input
+                                            type="range"
+                                            min="-50"
+                                            max="50"
+                                            value={page.portraitSettings?.offsetX || 0}
+                                            onChange={(e) => updatePagePortraitSettings(page.id, { offsetX: parseInt(e.target.value) })}
+                                            className="w-full h-1"
+                                        />
+                                    </div>
+                                    
+                                    <div>
+                                        <label className="block text-[10px] text-gray-400 mb-1">Vertical: {page.portraitSettings?.offsetY || 0}%</label>
+                                        <input
+                                            type="range"
+                                            min="-50"
+                                            max="50"
+                                            value={page.portraitSettings?.offsetY || 0}
+                                            onChange={(e) => updatePagePortraitSettings(page.id, { offsetY: parseInt(e.target.value) })}
+                                            className="w-full h-1"
+                                        />
+                                    </div>
+                                    
+                                    <div>
+                                        <label className="block text-[10px] text-gray-400 mb-1">Edge Fade: {page.portraitSettings?.fadeAmount ?? 50}%</label>
+                                        <input
+                                            type="range"
+                                            min="0"
+                                            max="100"
+                                            value={page.portraitSettings?.fadeAmount ?? 50}
+                                            onChange={(e) => updatePagePortraitSettings(page.id, { fadeAmount: parseInt(e.target.value) })}
+                                            className="w-full h-1"
+                                        />
+                                    </div>
+                                    
+                                    <button
+                                        onClick={() => updatePage(page.id, 'portraitSettings', getDefaultPortraitSettings())}
+                                        className="text-[10px] text-gray-500 hover:text-white transition-colors"
+                                    >
+                                        Reset to default
+                                    </button>
+                                </div>
+                            )}
+                        </div>
 
                         {/* Mode Toggle */}
                         <div className="flex items-center justify-between mb-3 p-2 bg-marvel-metal rounded">
@@ -2675,6 +2912,80 @@ const FormEditor: React.FC<FormEditorProps> = ({ heroData, onChange, displaySett
                                 onChange={(e) => updatePageContentOffset(page.id, parseInt(e.target.value))}
                                 className="w-full h-1 bg-gray-600 rounded-lg appearance-none cursor-pointer accent-marvel-yellow"
                             />
+                        </div>
+
+                        {/* Per-Page Ability Spacing */}
+                        <div className="mb-3 p-2 bg-marvel-metal rounded">
+                            <div className="flex items-center justify-between mb-1">
+                                <span className="text-xs text-gray-400">Ability Spacing</span>
+                                <span className="text-xs text-marvel-yellow">{page.abilitySpacing ?? displaySettings.abilitySpacing ?? 16}px</span>
+                            </div>
+                            <input
+                                type="range"
+                                min="0"
+                                max="24"
+                                value={page.abilitySpacing ?? displaySettings.abilitySpacing ?? 16}
+                                onChange={(e) => updatePageAbilitySpacing(page.id, parseInt(e.target.value))}
+                                className="w-full h-1 bg-gray-600 rounded-lg appearance-none cursor-pointer accent-marvel-yellow"
+                            />
+                        </div>
+
+                        {/* Per-Page Ultimate Ability */}
+                        <div className="mb-3 p-2 bg-marvel-metal rounded">
+                            <div className="flex items-center justify-between mb-2">
+                                <span className="text-xs text-gray-400">Ultimate Ability</span>
+                                <label className="flex items-center gap-1 cursor-pointer">
+                                    <input
+                                        type="checkbox"
+                                        checked={!!page.ultimate}
+                                        onChange={(e) => togglePageUltimate(page.id, e.target.checked)}
+                                        className="w-3 h-3"
+                                    />
+                                    <span className="text-[10px] text-gray-400">Has Ultimate</span>
+                                </label>
+                            </div>
+                            {page.ultimate && (
+                                <div className="space-y-1">
+                                    <div className="flex items-center gap-2">
+                                        <input
+                                            type="text"
+                                            value={page.ultimate.name}
+                                            onChange={(e) => updatePageUltimate(page.id, 'name', e.target.value)}
+                                            placeholder="Ultimate Name"
+                                            className="flex-1 bg-marvel-dark border border-marvel-border rounded px-2 py-1 text-xs text-white"
+                                        />
+                                        <IconUpload 
+                                            icon={page.ultimate.icon} 
+                                            onUpload={(url) => updatePageUltimate(page.id, 'icon', url)} 
+                                            size="sm" 
+                                        />
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <input
+                                            type="text"
+                                            value={page.ultimate.hotkey}
+                                            onChange={(e) => updatePageUltimate(page.id, 'hotkey', e.target.value)}
+                                            placeholder="Hotkey"
+                                            className="w-16 bg-marvel-dark border border-marvel-border rounded px-2 py-1 text-xs text-white"
+                                        />
+                                        <select
+                                            value={page.ultimate.hotkeyConsole || 'L3+R3'}
+                                            onChange={(e) => updatePageUltimate(page.id, 'hotkeyConsole', e.target.value)}
+                                            className="flex-1 bg-marvel-dark border border-marvel-border rounded px-2 py-1 text-xs text-white"
+                                        >
+                                            {CONSOLE_BUTTON_OPTIONS.map(opt => (
+                                                <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    <ColoredTextarea
+                                        value={page.ultimate.description}
+                                        onChange={(val) => updatePageUltimate(page.id, 'description', val)}
+                                        placeholder="Ultimate description..."
+                                        rows={2}
+                                    />
+                                </div>
+                            )}
                         </div>
 
                         {/* Simple Mode: Abilities Only (Legacy) */}
@@ -2818,6 +3129,15 @@ const FormEditor: React.FC<FormEditorProps> = ({ heroData, onChange, displaySett
                                                                     className="w-3 h-3"
                                                                 />
                                                                 <span className="text-[10px] text-gray-400">Passive</span>
+                                                            </label>
+                                                            <label className="flex items-center gap-1 cursor-pointer">
+                                                                <input
+                                                                    type="checkbox"
+                                                                    checked={(block as AbilityBlock).ability.isUltimate || false}
+                                                                    onChange={(e) => updateBlock(page.id, block.id, { ability: { ...(block as AbilityBlock).ability, isUltimate: e.target.checked } })}
+                                                                    className="w-3 h-3"
+                                                                />
+                                                                <span className="text-[10px] text-yellow-400">Ultimate</span>
                                                             </label>
                                                         </div>
                                                     </div>
