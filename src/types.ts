@@ -643,7 +643,7 @@ export const getSpotPreset = (): HeroData => ({
     role: 'Strategist',
     difficulty: 5,
     bannerColor: '#8400ff', // Purple
-    portraitImage: '/downloads/ChatGPT_Image_Feb_2__2026__03_57_45_AM-removebg-preview.png',
+    portraitImage: '/downloads/2cc0fccd-4b2f-451f-b4e2-751218d374e7-removebg-preview.png',
     heroLogo: '/logos/the-spot.png',
     heroLogoSettings: {
         offsetX: -93,
