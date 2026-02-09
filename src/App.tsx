@@ -296,6 +296,17 @@ function App() {
                             filename={`${heroData.name.toLowerCase().replace(/\s+/g, '-')}-ability-page.png`}
                             onExportStateChange={setIsExporting}
                         />
+                        
+                        {/* Buy Me a Coffee */}
+                        <a
+                            href="https://buymeacoffee.com/seanonamade"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-1.5 px-3 py-2 bg-yellow-400 hover:bg-yellow-300 text-black font-bold rounded transition-colors text-sm"
+                        >
+                            <img src="/downloads/0x0.png" alt="Coffee" className="w-5 h-5 object-contain" />
+                            <span className="hidden sm:inline">Support</span>
+                        </a>
                     </div>
                 </div>
             </header>

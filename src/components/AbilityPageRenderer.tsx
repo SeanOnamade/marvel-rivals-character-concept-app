@@ -859,11 +859,11 @@ const AbilityPageRenderer = React.forwardRef<HTMLDivElement, AbilityPageRenderer
                                                 <img 
                                                     src={heroData.ultimate.icon}
                                                     alt="" 
-                                                    className="object-contain"
+                                                    className="object-cover"
                                                     style={{ 
                                                         filter: 'brightness(0) invert(1) drop-shadow(0 0 2px rgba(255,200,0,0.6))',
-                                                        width: `${(heroData.ultimate.iconScale || 1) * 140}%`,
-                                                        height: `${(heroData.ultimate.iconScale || 1) * 140}%`
+                                                        width: `${1.4 * (heroData.ultimate.iconScale || 1) * 100}%`,
+                                                        height: `${1.4 * (heroData.ultimate.iconScale || 1) * 100}%`
                                                     }}
                                                 />
                                             </div>
@@ -987,11 +987,11 @@ const AbilityPageRenderer = React.forwardRef<HTMLDivElement, AbilityPageRenderer
                                     <img 
                                         src={ultimate.icon}
                                         alt="" 
-                                        className="object-contain"
+                                        className="object-cover"
                                         style={{ 
                                             filter: 'brightness(0) invert(1) drop-shadow(0 0 2px rgba(255,200,0,0.6))',
-                                            width: `${(ultimate.iconScale || 1) * 140}%`,
-                                            height: `${(ultimate.iconScale || 1) * 140}%`
+                                            width: `${1.4 * (ultimate.iconScale || 1) * 100}%`,
+                                            height: `${1.4 * (ultimate.iconScale || 1) * 100}%`
                                         }}
                                     />
                                 </div>

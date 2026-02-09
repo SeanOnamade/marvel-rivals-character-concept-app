@@ -2086,15 +2086,17 @@ const FormEditor: React.FC<FormEditorProps> = ({ heroData, onChange, displaySett
                                 ? 'border-2 border-marvel-yellow border-dashed' 
                                 : 'border-2 border-transparent'
                         }`}
-                        draggable
-                        onDragStart={() => handleDragStart('attack', index)}
                         onDragOver={(e) => handleDragOver(e, index)}
-                        onDragEnd={handleDragEnd}
                         onDrop={() => handleDrop('attack', index)}
                     >
                         <div className="flex items-center justify-between mb-2">
                             <div className="flex items-center gap-2">
-                                <div className="cursor-grab active:cursor-grabbing text-gray-500 hover:text-gray-300">
+                                <div 
+                                    className="cursor-grab active:cursor-grabbing text-gray-500 hover:text-gray-300 p-1 -m-1"
+                                    draggable
+                                    onDragStart={() => handleDragStart('attack', index)}
+                                    onDragEnd={handleDragEnd}
+                                >
                                     <GripVertical className="w-4 h-4" />
                                 </div>
                                 <h4 className="text-sm font-bold text-marvel-yellow">Attack {index + 1}</h4>
@@ -2168,15 +2170,17 @@ const FormEditor: React.FC<FormEditorProps> = ({ heroData, onChange, displaySett
                                 ? 'border-2 border-marvel-yellow border-dashed' 
                                 : 'border-2 border-transparent'
                         }`}
-                        draggable
-                        onDragStart={() => handleDragStart('teamup', index)}
                         onDragOver={(e) => handleDragOver(e, index)}
-                        onDragEnd={handleDragEnd}
                         onDrop={() => handleDrop('teamup', index)}
                     >
                         <div className="flex items-center justify-between mb-2">
                             <div className="flex items-center gap-2">
-                                <div className="cursor-grab active:cursor-grabbing text-gray-500 hover:text-gray-300">
+                                <div 
+                                    className="cursor-grab active:cursor-grabbing text-gray-500 hover:text-gray-300 p-1 -m-1"
+                                    draggable
+                                    onDragStart={() => handleDragStart('teamup', index)}
+                                    onDragEnd={handleDragEnd}
+                                >
                                     <GripVertical className="w-4 h-4" />
                                 </div>
                                 <h4 className="text-sm font-bold text-marvel-yellow">Team-Up {index + 1}</h4>
@@ -2538,15 +2542,17 @@ const FormEditor: React.FC<FormEditorProps> = ({ heroData, onChange, displaySett
                                 ? 'border-2 border-marvel-yellow border-dashed' 
                                 : 'border-2 border-transparent'
                         }`}
-                        draggable
-                        onDragStart={() => handleDragStart('ability', index)}
                         onDragOver={(e) => handleDragOver(e, index)}
-                        onDragEnd={handleDragEnd}
                         onDrop={() => handleDrop('ability', index)}
                     >
                         <div className="flex items-center justify-between mb-2">
                             <div className="flex items-center gap-2">
-                                <div className="cursor-grab active:cursor-grabbing text-gray-500 hover:text-gray-300">
+                                <div 
+                                    className="cursor-grab active:cursor-grabbing text-gray-500 hover:text-gray-300 p-1 -m-1"
+                                    draggable
+                                    onDragStart={() => handleDragStart('ability', index)}
+                                    onDragEnd={handleDragEnd}
+                                >
                                     <GripVertical className="w-4 h-4" />
                                 </div>
                                 <h4 className="text-sm font-bold text-marvel-yellow">Ability {index + 1}</h4>
@@ -2619,15 +2625,17 @@ const FormEditor: React.FC<FormEditorProps> = ({ heroData, onChange, displaySett
                                 ? 'border-2 border-marvel-yellow border-dashed' 
                                 : 'border-2 border-transparent'
                         }`}
-                        draggable
-                        onDragStart={() => handleDragStart('passive', index)}
                         onDragOver={(e) => handleDragOver(e, index)}
-                        onDragEnd={handleDragEnd}
                         onDrop={() => handleDrop('passive', index)}
                     >
                         <div className="flex items-center justify-between mb-2">
                             <div className="flex items-center gap-2">
-                                <div className="cursor-grab active:cursor-grabbing text-gray-500 hover:text-gray-300">
+                                <div 
+                                    className="cursor-grab active:cursor-grabbing text-gray-500 hover:text-gray-300 p-1 -m-1"
+                                    draggable
+                                    onDragStart={() => handleDragStart('passive', index)}
+                                    onDragEnd={handleDragEnd}
+                                >
                                     <GripVertical className="w-4 h-4" />
                                 </div>
                                 <h4 className="text-sm font-bold text-marvel-yellow">Passive {index + 1}</h4>

@@ -626,6 +626,7 @@ export const getDoctorStrangePreset = (): HeroData => ({
         hotkey: 'Q',
         hotkeyConsole: 'L3+R3',
         icon: '/icons/doctor-strange/eye-of-agamotto.png',
+        iconScale: 0.8,
     },
     additionalPages: [],
 });
@@ -672,21 +673,22 @@ export const getSpotPreset = (): HeroData => ({
             description: 'Launch a piercing spot that heals allies and damages enemies. Attacks restore [green]Warps[/green], and accrue [orange]Internal Instability[/orange]. Attacks on enemies grant the user lifesteal increasing with [orange]Instability[/orange].',
             hotkey: 'LMB',
             hotkeyConsole: 'R2',
-            icon: '/icons/doctor-strange/daggers-of-denak.png',
-            iconScale: 0.9,
+            icon: '/downloads/4ae8899d-86f5-4e86-a8fa-337f78e61564.png',
+            iconScale: 0.7,
         },
     ],
     teamUpAbilities: [
         {
             id: generateId(),
-            name: 'THAT HITS THE SPOT',
-            description: 'Spot grants Spider-Man a portion of his extradimensional power. Spider-Man can fire out a pair of warp that function as persistent, indestructible portals for him alone.',
+            name: 'SPOT ON',
+            description: 'Spot grants Spider-Man a portion of his extradimensional power. Spider-Man can fire out a pair of [green]Warps[/green] that function as persistent, indestructible portals for him alone.',
             hotkey: 'PASSIVE',
             hotkeyConsole: 'D-Pad',
             isPassive: true,
             isAnchor: true,
             partnerIcons: ['/hero-icons/spider-man_avatar.png'],
-            icon: '/icons/teamup-gammamaelstrom.png',
+            icon: '/downloads/23800b95-dad6-4c19-973b-a773e2a9dfb6-removebg-preview.png',
+            iconScale: 1.2,
             characterImageCrop: {
                 top: 8,
                 left: 37,
@@ -702,7 +704,7 @@ export const getSpotPreset = (): HeroData => ({
             description: 'Consume a [green]Warp[/green] to launch in any direction through a portal. Become [blue]Intangible[/blue] upon cast.',
             hotkey: 'LSHIFT',
             hotkeyConsole: 'L1',
-            icon: '/icons/doctor-strange/cloak-of-levitation.png',
+            icon: '/downloads/9533101f-cdc0-40b6-a31e-cbbd9bd85112.png',
             iconScale: 0.8,
         },
         {
@@ -711,8 +713,8 @@ export const getSpotPreset = (): HeroData => ({
             description: 'Select between Mass Intake or Vector Reversal. MI: Consume a [green]Warp[/green] to protect self or an ally with a portal, reducing incoming damage and accruing [orange]Instability[/orange]. VR: Consume two [green]Warps[/green] to deflect all incoming projectiles.',
             hotkey: 'E',
             hotkeyConsole: 'R1',
-            icon: '/icons/doctor-strange/shield-of-the-seraphim.png',
-            iconScale: 0.9,
+            icon: '/downloads/4a1c16ca-572b-4eb4-b44c-0908eed34fd2.png',
+            iconScale: 0.8,
         },
         {
             id: generateId(),
@@ -720,8 +722,8 @@ export const getSpotPreset = (): HeroData => ({
             description: 'Consume two [green]Warps[/green] to shoot a spot onto a surface or an ally. The spot heals allies within its radius, increasing with [orange]Instability[/orange]. At will, teleport to the spot, healing self and nearby allies.',
             hotkey: 'F',
             hotkeyConsole: 'Triangle',
-            icon: '/icons/doctor-strange/pentagram-of-farallah.png',
-            iconScale: 0.7,
+            icon: '/downloads/content__1_-removebg-preview.png',
+            iconScale: 1.2,
         },
         {
             id: generateId(),
@@ -729,8 +731,8 @@ export const getSpotPreset = (): HeroData => ({
             description: 'Unleash all stored [orange]Instability[/orange] upon a selected target, healing allies and damaging enemies. Consume a [green]Warp[/green] right after to teleport towards the target, launching enemy targets upwards. Break with no target to vent [orange]Instability[/orange], unleashing energy in a small radius and restoring [green]Warps[/green].',
             hotkey: 'RMB',
             hotkeyConsole: 'L2',
-            icon: '/icons/doctor-strange/maelstrom-of-madness.png',
-            iconScale: 0.7,
+            icon: '/downloads/d0702ff0-3dc3-41ad-a8f4-f2b97dd57ee6.png',
+            iconScale: 0.9,
         },
     ],
     passives: [
@@ -740,7 +742,7 @@ export const getSpotPreset = (): HeroData => ({
             description: 'Internal Instability accumulates with blocking. If Instability peaks for too long, Spot receives [blue]Anti-Heal[/blue] for a short period, and the energy is released in a burst around him, launching him upwards.',
             hotkey: 'PASSIVE',
             isPassive: true,
-            icon: '/icons/doctor-strange/price-of-magic.png',
+            icon: '/downloads/b58bfe35-a1fb-4788-90ca-aeb452e1ecfa.png',
             iconScale: 0.8,
         },
     ],
@@ -750,7 +752,8 @@ export const getSpotPreset = (): HeroData => ({
         description: 'Anchor and create a grounded disk that can be remotely piloted. Enemies above are [orange]grounded[/orange] and have mobility [blue]suppressed[/blue]. Enemy projectiles are absorbed while [green]healing energy[/green] radiates from Spot\'s anchor. Finally, absorbed energy is released in a concussive pulse, launching enemies upwards.',
         hotkey: 'Q',
         hotkeyConsole: 'L3+R3',
-        icon: '/icons/doctor-strange/eye-of-agamotto.png',
+        icon: '/downloads/ChatGPT Image Feb 9, 2026, 04_17_47 AM.png',
+        iconScale: 0.8,
     },
     additionalPages: [],
 });
@@ -767,7 +770,7 @@ export const getCloakAndDaggerPreset = (): HeroData => ({
         offsetY: 54,
         scale: 1.3,
     },
-    mainPageIcon: '/hero-icons/cloak-and-dagger_avatar.png', // Page 1 icon
+    mainPageIcon: '/downloads/dagger-face.png', // Page 1 icon (Dagger)
     portraitSettings: {
         scale: 0.9,
         offsetX: 0,
@@ -781,7 +784,7 @@ export const getCloakAndDaggerPreset = (): HeroData => ({
         },
     },
     heroInfoSettings: {
-        offsetX: 75,
+        offsetX: 57,
         offsetY: 21,
     },
     attacks: [
@@ -816,7 +819,7 @@ export const getCloakAndDaggerPreset = (): HeroData => ({
             description: 'Switch to Cloak.',
             hotkey: 'LSHIFT',
             hotkeyConsole: 'L1',
-            icon: '/downloads/cnd/fromstol.png',
+            icon: '/downloads/cnd/64 (7).png',
             iconScale: 0.8,
         },
         {
@@ -846,7 +849,7 @@ export const getCloakAndDaggerPreset = (): HeroData => ({
         hotkey: 'Q',
         hotkeyConsole: 'L3+R3',
         icon: '/downloads/cnd/64 (5).png',
-        iconScale: 0.8,
+        iconScale: 0.7,
     },
     additionalPages: [
         {
@@ -861,7 +864,7 @@ export const getCloakAndDaggerPreset = (): HeroData => ({
                 fadeAmount: 12,
                 crop: { top: 0, left: 0, right: 0, bottom: 0 },
             },
-            icon: '/logos/cloak-and-dagger.png',
+            icon: '/downloads/e513dafc-6ac9-44af-a5f6-031d1986-removebg-preview.png', // Page 2 icon (Cloak)
             abilities: [], // Empty for legacy compat
             contentOffsetY: -25,
             blocks: [
@@ -1076,6 +1079,7 @@ export const getGambitPreset = (): HeroData => ({
         hotkey: 'Q',
         hotkeyConsole: 'L3+R3',
         icon: '/icons/gambit/ragin-royal-flush.png',
+        iconScale: 0.8,
     },
     additionalPages: [
         {
