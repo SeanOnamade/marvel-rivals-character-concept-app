@@ -710,7 +710,7 @@ export const getSpotPreset = (): HeroData => ({
         {
             id: generateId(),
             name: 'INTANGIBLE PARRY',
-            description: 'Select between Mass Intake or Vector Reversal. MI: Consume a [green]Warp[/green] to protect self or an ally with a portal, reducing incoming damage and accruing [orange]Instability[/orange]. VR: Consume two [green]Warps[/green] to deflect all incoming projectiles.',
+            description: 'Consume two [green]Warps[/green] to select between Mass Intake or Vector Reversal. MI: Protect self or an ally with a portal, halving all incoming damage and accruing [orange]Instability[/orange]. VR: Deflect all incoming projectiles.',
             hotkey: 'E',
             hotkeyConsole: 'R1',
             icon: '/downloads/4a1c16ca-572b-4eb4-b44c-0908eed34fd2.png',
@@ -739,7 +739,7 @@ export const getSpotPreset = (): HeroData => ({
         {
             id: generateId(),
             name: 'INTERNAL INSTABILITY',
-            description: 'Internal Instability accumulates with blocking. If Instability peaks for too long, Spot receives [blue]Anti-Heal[/blue] for a short period, and the energy is released in a burst around him, launching him upwards.',
+            description: 'Internal Instability accumulates with blocking and attacking. If Instability peaks for too long, Spot receives [blue]Anti-Heal[/blue] for a short period, and the energy is released in a burst around him, launching him upwards.',
             hotkey: 'PASSIVE',
             isPassive: true,
             icon: '/downloads/b58bfe35-a1fb-4788-90ca-aeb452e1ecfa.png',

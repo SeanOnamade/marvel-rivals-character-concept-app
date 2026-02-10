@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { Analytics } from '@vercel/analytics/react';
 import { ExternalLink, Loader2, Undo2, Redo2, Eye, ChevronUp, ZoomIn, ZoomOut, Columns } from 'lucide-react';
 import { getDefaultHeroData, getDefaultDisplaySettings, HeroData, DisplaySettings } from './types';
 import { openInNewTab, preloadPresetImages } from './utils';
@@ -472,6 +473,7 @@ function App() {
                     </div>
                 )}
             </div>
+            <Analytics />
         </div>
     );
 }
