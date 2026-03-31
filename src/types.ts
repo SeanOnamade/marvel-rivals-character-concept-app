@@ -1168,6 +1168,144 @@ export const getGambitPreset = (): HeroData => ({
     ],
 });
 
+export const getElsaBloodstonePreset = (): HeroData => ({
+    name: 'ELSA BLOODSTONE',
+    role: 'Duelist',
+    difficulty: 3,
+    bannerColor: '#dc2626',
+    portraitImage: '/downloads/elsa/elsa-portrait.png',
+    heroLogo: '/downloads/elsa/logo.png',
+    heroLogoSettings: {
+        offsetX: -76,
+        offsetY: 95,
+        scale: 1.4,
+        crop: {
+            top: 12.06,
+            left: 27.41,
+            right: 24.85,
+            bottom: 21.11,
+        },
+    },
+    portraitSettings: {
+        scale: 1,
+        offsetX: -7,
+        offsetY: 24,
+        fadeAmount: 41,
+        crop: {
+            top: 0,
+            left: 25.77,
+            right: 31.8,
+            bottom: 50.99,
+        },
+    },
+    heroInfoSettings: {
+        offsetX: 31,
+        offsetY: -4,
+    },
+    attacks: [
+        {
+            id: generateId(),
+            name: 'Breathing Gun',
+            description: 'Fire your shotgun in bursts of two.',
+            hotkey: 'LMB',
+            hotkeyConsole: 'R2',
+            icon: '/downloads/elsa/primary-sharpened.png',
+            iconScale: 1.4,
+        },
+    ],
+    teamUpAbilities: [
+        {
+            id: generateId(),
+            name: "Mr. Pool's Interdimensional Toy Box",
+            description: "Deadpool hands Jeff the Land Shark a plushie with attitude. Jeff can spit it ahead where it'll continuously [blue]Taunt [/blue]nearby enemies and [blue]Block Vision[/blue], while allies in range enjoy a plush-powered healing party! Elsa's Living Bullet is empowered, also [blue]Taunting[/blue] nearby enemies and [blue]Blocking Vision[/blue]. She can recall the round, [green]healing[/green] herself based on the damage dealt.",
+            hotkey: 'RMB',
+            hotkeyConsole: 'D-Pad',
+            isAnchor: false,
+            partnerIcons: ['/hero-icons/jeff-the-land-shark_avatar.png'],
+            anchorIcon: '/hero-icons/deadpool_avatar.png',
+            icon: '/downloads/elsa/teamup.png',
+            characterImageCrop: {
+                top: 8.22,
+                left: 41.67,
+                right: 42.21,
+                bottom: 76.21,
+            },
+        },
+    ],
+    abilities: [
+        {
+            id: generateId(),
+            name: 'Living Bullet',
+            description: 'Fire a splintering shot that ricochets off surfaces towards nearby enemies.',
+            hotkey: 'RMB',
+            hotkeyConsole: 'L2',
+            icon: '/downloads/elsa/rmb-sharpened.png',
+            iconScale: 0.6,
+            iconBreakout: true,
+        },
+        {
+            id: generateId(),
+            name: 'Monster Dash',
+            description: 'Dash in any direction, gaining [green]Bonus Health[/green].',
+            hotkey: 'LSHIFT',
+            hotkeyConsole: 'L1',
+            icon: '/downloads/elsa/lshift-sharpened.png',
+            iconScale: 0.8,
+            iconBreakout: true,
+        },
+        {
+            id: generateId(),
+            name: 'Gun Launch',
+            description: 'Dash ahead, then launch yourself and a target with a special gunshot. Press again while airborne to launch again.',
+            hotkey: 'E',
+            hotkeyConsole: 'Triangle',
+            icon: '/downloads/elsa/e-sharpened.png',
+            iconScale: 0.7,
+            iconBreakout: true,
+        },
+        {
+            id: generateId(),
+            name: 'Diablo Trap',
+            description: 'Lay out a trap that snares an enemy, [orange]immobilizing[/orange] them. Once activated, press again to dash towards them.',
+            hotkey: 'F',
+            hotkeyConsole: 'L1',
+            icon: '/downloads/elsa/f-sharpened.png',
+        },
+    ],
+    passives: [
+        {
+            id: generateId(),
+            name: 'Instinct',
+            description: '[blue]Instinct[/blue] reduces ability cooldowns. [blue]Instinct [/blue]is built by getting eliminations.',
+            hotkey: 'PASSIVE',
+            isPassive: true,
+            icon: '/downloads/elsa/logo.png',
+            iconScale: 0.9,
+        },
+        {
+            id: generateId(),
+            name: 'Elephant Gun',
+            description: 'After using a movement ability, load your elephant gun for an [blue]empowered[/blue], piercing attack.',
+            hotkey: 'PASSIVE',
+            isPassive: true,
+            icon: '/downloads/elsa/elephantgun.png',
+            iconScale: 0.8,
+            iconBreakout: true,
+        },
+    ],
+    ultimate: {
+        id: generateId(),
+        name: 'Dinnertime',
+        description: 'Release the Glartrox, who charges at enemies straight ahead, [orange]immobilizing[/orange] them. Press again to recall him, finishing off with a devastating bite.',
+        hotkey: 'Q',
+        hotkeyConsole: 'L3+R3',
+        icon: '/downloads/elsa/q-sharpened.png',
+        iconScale: 1,
+        iconBreakout: true,
+    },
+    additionalPages: [],
+});
+
 // All available presets
 export const HERO_PRESETS: HeroPresetConfig[] = [
     { 
@@ -1208,6 +1346,16 @@ export const HERO_PRESETS: HeroPresetConfig[] = [
             showBackground: true,
             contentOffsetY: -61,
             abilitySpacing: 24,
+        }),
+    },
+    { 
+        name: 'Elsa Bloodstone', 
+        getData: getElsaBloodstonePreset,
+        getDisplaySettings: () => ({
+            customBackground: '/backgrounds/img_gallerys1_card_horizontal_03.png',
+            showBackground: true,
+            contentOffsetY: 76,
+            abilitySpacing: 12,
         }),
     },
 ];

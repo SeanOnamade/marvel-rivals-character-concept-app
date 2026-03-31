@@ -25,6 +25,17 @@ export const preloadPresetImages = (): void => {
         '/hero-icons/doctor-strange_avatar.png',
         '/hero-icons/iron-man_avatar.png',
         '/hero-icons/spider-man_avatar.png',
+        // Elsa Bloodstone preset
+        '/downloads/elsa/elsa-portrait.png',
+        '/downloads/elsa/logo.png',
+        '/downloads/elsa/primary-sharpened.png',
+        '/downloads/elsa/rmb-sharpened.png',
+        '/downloads/elsa/lshift-sharpened.png',
+        '/downloads/elsa/e-sharpened.png',
+        '/downloads/elsa/f-sharpened.png',
+        '/downloads/elsa/q-sharpened.png',
+        '/downloads/elsa/elephantgun.png',
+        '/downloads/elsa/teamup.png',
     ];
 
     imagesToPreload.forEach(src => {

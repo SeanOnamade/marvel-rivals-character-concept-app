@@ -105,7 +105,7 @@ npm run preview
 
 1. **Choose a Starting Point**
    - Start with a blank template, or
-   - Load a preset (Doctor Strange, The Spot)
+   - Load a preset (Doctor Strange, The Spot, Gambit, Cloak & Dagger, Elsa Bloodstone)
    - Import a template file shared by someone else
 
 2. **Customize Your Hero**
@@ -141,6 +141,7 @@ npm run preview
 | **modern-screenshot** | High-quality PNG export |
 | **@imgly/background-removal** | AI-powered background removal |
 | **Lucide React** | Beautiful icons |
+| **@vercel/analytics** | Optional usage analytics when deployed on Vercel |
 
 ---
 
@@ -151,6 +152,7 @@ marvel-rivals-template/
 ├── public/
 │   ├── backgrounds/      # Gallery background images
 │   ├── downloads/        # Sample templates (JSON + PNG)
+│   ├── fonts/            # Local fonts (e.g. Matthan Sans)
 │   ├── hero-icons/       # All hero avatar icons
 │   ├── icons/            # Ability icons by hero
 │   ├── logos/            # Hero logo images
@@ -159,18 +161,24 @@ marvel-rivals-template/
 ├── src/
 │   ├── components/
 │   │   ├── AbilityPageRenderer.tsx  # Main preview canvas
+│   │   ├── AbilityCard.tsx          # Single ability row in the preview
 │   │   ├── FormEditor.tsx           # Editor panel with all controls
 │   │   ├── HeroPortrait.tsx         # Hero image with controls
 │   │   ├── ImageCropEditor.tsx      # Crop modal
 │   │   ├── CollapsibleSection.tsx   # Mobile-friendly collapsible UI
 │   │   ├── DifficultyStars.tsx      # Star rating display
 │   │   └── ExportButton.tsx         # Export/share button
+│   ├── hooks/
+│   │   └── useHistory.ts            # Undo/redo state history
 │   ├── types.ts          # TypeScript interfaces & presets
 │   ├── utils.ts          # Helper functions (export, templates)
 │   ├── App.tsx           # Main application
-│   └── index.css         # Global styles & responsive design
+│   ├── main.tsx          # React entry point
+│   └── index.css         # Tailwind v4 @theme, global & responsive styles
 ├── docs/
 │   └── USER_TEMPLATES_PLAN.md  # Template system documentation
+├── postcss.config.js
+├── tailwind.config.js
 └── package.json
 ```
 
@@ -199,7 +207,7 @@ export const HERO_PRESETS: HeroPresetConfig[] = [
 
 ### Color Scheme
 
-The Marvel Rivals palette is defined in `tailwind.config.js`:
+With **Tailwind CSS v4**, the Marvel Rivals palette is defined in `src/index.css` inside the `@theme` block (colors, fonts, and glow shadows). The same color names are also listed in `tailwind.config.js` under `theme.extend.colors` for consistency with tooling.
 
 - `marvel-dark`: #1a1a1a (main background)
 - `marvel-metal`: #2a2a2a (card/panel backgrounds)

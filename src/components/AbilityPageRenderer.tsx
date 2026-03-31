@@ -1107,6 +1107,7 @@ const AbilityPageRenderer = React.forwardRef<HTMLDivElement, AbilityPageRenderer
         return (
             <div 
                 ref={ref} 
+                data-testid="ability-page-canvas"
                 className="relative bg-[#0a0a0a] overflow-hidden"
                 style={{ 
                     fontFamily: "'Matthan Sans', 'Rajdhani', sans-serif",

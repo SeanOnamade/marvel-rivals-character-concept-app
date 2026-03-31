@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "screenshot:elsa": "node scripts/capture-elsa-screenshot.mjs"
   },
   "devDependencies": {
     "@types/lz-string": "^1.3.34",
@@ -14,6 +15,7 @@
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.1.2",
     "autoprefixer": "^10.4.24",
+    "playwright": "^1.51.0",
     "postcss": "^8.5.6",
     "tailwindcss": "^4.1.18",
     "typescript": "~5.9.3",
