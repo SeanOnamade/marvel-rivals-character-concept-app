@@ -29,6 +29,64 @@
 
 ---
 
+## Screenshots
+
+In-app views: **editor** on the left, **live preview** on the right (same frame you export as PNG).
+
+### Getting started
+
+<div align="center">
+
+![Blank template with quick-start presets](public/post-screenshots/blank-template-quick-start.png)
+
+_Pick **New Blank Template** or load a built-in preset; adjust **Preview Zoom** and use **Download Template** / **Load Template** for JSON._
+
+</div>
+
+### Full kit (Moveset tab)
+
+<div align="center">
+
+![Doctor Strange preset — Moveset tab](public/post-screenshots/doctor-strange-moveset-editor.png)
+
+_Example preset with attacks, team-ups, ultimate, passives, and **colored text** in ability descriptions._
+
+![The Spot concept — bracket tags in the editor](public/post-screenshots/the-spot-moveset-colored-text.png)
+
+_Custom concept: `[green]` / `[orange]` tags in the form match highlights in the preview._
+
+</div>
+
+### Extra pages (Pages tab)
+
+<div align="center">
+
+![Gambit — additional page “Deck Abilities”](public/post-screenshots/gambit-pages-deck-abilities.png)
+
+_**Pages** tab — add secondary pages (e.g. card-style **Deck Abilities**) with their own icons and layout._
+
+![Cloak & Dagger — block-based page editor](public/post-screenshots/cloak-pages-block-editor.png)
+
+_Block editor: headers, attacks, team-ups, columns, and spacing — built for complex kits._
+
+</div>
+
+### Portrait & banner (Appearance tab)
+
+<div align="center">
+
+![Elsa Bloodstone — Appearance and portrait tools](public/post-screenshots/elsa-bloodstone-appearance-editor.png)
+
+_**Appearance** — portrait upload, **Remove BG**, banner color, fold options, and a full preview of the Elsa preset._
+
+![Dagger concept — portrait and hero fields](public/post-screenshots/dagger-appearance-portrait-tools.png)
+
+_Custom hero: role, difficulty, portrait pipeline (**Change / Remove BG / Crop**), and live card preview._
+
+</div>
+
+---
+
 ## Features
 
 ### Pixel-Perfect Design
@@ -157,6 +215,7 @@ marvel-rivals-template/
 │   ├── icons/            # Ability icons by hero
 │   ├── logos/            # Hero logo images
 │   ├── role-icons/       # Strategist/Duelist/Vanguard badges
+│   ├── post-screenshots/ # README / promo in-app screenshots
 │   └── ui/               # UI elements (buttons, banners, etc.)
 ├── src/
 │   ├── components/
